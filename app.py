@@ -30,7 +30,7 @@ st.markdown("""
     }
     .missao-concluida { text-decoration: line-through; color: #888888; }
     </style>
-""", unsafe_index=True)
+""", unsafe_allow_html=True)
 
 # 2. Conexão com o Google Sheets (Puxando os dados reais)
 # Substitua pelo URL da sua planilha que está configurada como "Qualquer pessoa com o link pode ler"
@@ -56,11 +56,15 @@ df_capa, df_elogios, df_missoes = carregar_dados()
 # 3. CONSTRUÇÃO DA TELA (DESIGN)
 
 # Banner do Pequeno Príncipe (Usando a imagem da sua pasta local ou link)
-st.image("Imagens/capa.jpg", use_container_width=True)
+# Se não subir a imagem no GitHub, você pode trocar a linha abaixo por um link de imagem direto.
+try:
+    st.image("Imagens/capa.jpg", use_column_width=True)
+except:
+    pass # Ignora se não achar a imagem por enquanto
 
 # Títulos
 st.title(f"✨ {df_capa['Titulo_App'].iloc[0]} ✨")
-st.markdown(f"<h3>{df_capa['Subtitulo_App'].iloc[0]}</h3>", unsafe_index=True)
+st.markdown(f"<h3>{df_capa['Subtitulo_App'].iloc[0]}</h3>", unsafe_allow_html=True)
 st.markdown("---")
 
 # Seção 1: O Botão Mágico (Sorteador de Elogios)
@@ -70,7 +74,7 @@ if st.button("✨ Quer um carinho? (Clique aqui) ✨"):
     # Escolhe uma frase aleatória pura via código Python
     frase_sorteada = random.choice(df_elogios['Frase'].tolist())
     st.balloons() # Efeito visual lindo de balões subindo na tela!
-    st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic;'>\"{frase_sorteada}\"</div>", unsafe_index=True)
+    st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic;'>\"{frase_sorteada}\"</div>", unsafe_allow_html=True)
 else:
     st.info("Clique no botão acima para ler o elogio do momento!")
 
@@ -89,4 +93,4 @@ for index, row in df_missoes.iterrows():
             <span style='float: right; background: #FF4B4B; padding: 2px 8px; border-radius: 10px; font-size: 12px;'>{row['Tipo_Missao']}</span>
             <h4 class='{classe_texto}'>{status_icon} {row['Titulo']}</h4>
         </div>
-    """, unsafe_index=True)
+    """, unsafe_allow_html=True)
