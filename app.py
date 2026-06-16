@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import random
+from datetime import datetime
 
 # 1. Configuração da Página do Aplicativo
 st.set_page_config(
@@ -34,126 +35,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Conexão com os Dados da Planilha
-# Lembre-se de colocar o ID correto da sua planilha no lugar de "SEU_ID_DA_PLANILHA"
-SHEET_URL = "https://docs.google.com/spreadsheets/d/SEU_ID_DA_PLANILHA/export?format=csv"
+# 2. Link de Conexão com as Abas da Planilha Real
+ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHIeg36F8"
+BASE_URL = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv"
 
-@st.cache_data(ttl=15)
+@st.cache_data(ttl=10)  # Atualiza a cada 10 segundos para pegar mudanças na planilha
 def carregar_dados():
     try:
-        df_capa = pd.read_csv(f"{SHEET_URL}&gid=0")
-        df_elogios = pd.read_csv(f"{SHEET_URL}&gid=123456")
-        df_missoes = pd.read_csv(f"{SHEET_URL}&gid=789101")
-        return df_capa, df_elogios, df_missoes
-    except:
-        # Dados de backup caso o Google Sheets não responda
-        df_capa = pd.DataFrame([{"Titulo_App": "Nosso Universo", "Subtitulo_App": "Bem-vinda, minha rosa."}])
-        df_elogios = pd.DataFrame([{"Frase": "Você é o meu momento favorito do dia!"}, {"Frase": "Seu sorriso ilumina meu mundo."}])
-        df_missoes = pd.DataFrame([
-            {"ID": 1, "Titulo": "Cozinhar algo juntos", "Tipo_Missao": "Média", "Status": "Pendente", "Gif": "comida.gif"},
-            {"ID": 2, "Transit": "Assistir um filme cobertos", "Tipo_Missao": "Fácil", "Status": "Concluída", "Gif": "coberta.gif"},
-            {"ID": 3, "Titulo": "Dizer quem ama mais sem brigar", "Tipo_Missao": "Difícil", "Status": "Pendente", "Gif": "brava.gif"}
-        ])
-        return df_capa, df_elogios, df_missoes
-
-df_capa, df_elogios, df_missoes = carregar_dados()
-
-
-# 3. MENU LATERAL DE NAVEGAÇÃO
-st.sidebar.title("🌌 Menu Interativo")
-tela_selecionada = st.sidebar.radio(
-    "Navegue pelo nosso world:",
-    ["🌌 Início & Carinho", "🎯 Missões Secretas", "📸 Nosso Diário"]
-)
-st.sidebar.markdown("---")
-st.sidebar.info("Feito com ❤️ por Denner")
-
-
-# ==========================================
-# TELA 1: INÍCIO & CARINHO
-# ==========================================
-if tela_selecionada == "🌌 Início & Carinho":
-    # Carrega a imagem da capa direto da raiz do repositório
-    try:
-        st.image("capa.jpg", use_container_width=True)
-    except:
-        st.warning("🌌 Carregando imagem de capa...")
-    
-    st.title(f"✨ {df_capa['Titulo_App'].iloc[0]} ✨")
-    st.markdown(f"<h3>{df_capa['Subtitulo_App'].iloc[0]}</h3>", unsafe_allow_html=True)
-    st.markdown("---")
-
-    st.subheader("❤️ Um carinho para o seu dia")
-    if st.button("✨ Quer um carinho? (Clique aqui) ✨"):
-        frase_sorteada = random.choice(df_elogios['Frase'].tolist())
-        st.balloons() # Efeito fofo de balões subindo
-        st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic;'>\"{frase_sorteada}\"</div>", unsafe_allow_html=True)
-    else:
-        st.info("Clique no botão acima para receber sua dose diária de amor!")
-
-
-# ==========================================
-# TELA 2: MISSÕES SECRETAS
-# ==========================================
-elif tela_selecionada == "🎯 Missões Secretas":
-    st.title("🎯 Nossas Missões Românticas")
-    st.write("Aqui estão os nossos desafios! Clique no botão de cada uma para ver uma surpresa animada:")
-    st.markdown("---")
-
-    for index, row in df_missoes.iterrows():
-        status_icon = "✅" if row['Status'] == "Concluída" else "⏳"
-        classe_texto = "missao-concluida" if row['Status'] == "Concluída" else ""
-        
-        # Exibe o cartão visual da missão
-        st.markdown(f"""
-            <div class='card'>
-                <span style='float: right; background: #FF4B4B; padding: 2px 8px; border-radius: 10px; font-size: 12px;'>{row['Tipo_Missao']}</span>
-                <h4 class='{classe_texto}'>{status_icon} {row['Titulo']}</h4>
-                <p style='font-size: 13px; color: #aaa; margin-bottom: 0px;'>Status: {row['Status']}</p>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        # Botão interativo para abrir o GIF correspondente
-        if st.button(f"🔍 Ver Surpresa: {row['Titulo']}", key=f"btn_{row['ID']}"):
-            st.write(f"**Nível:** Essa missão é considerada *{row['Tipo_Missao']}*. Vamos cumprir juntos?")
-            
-            # Pega o nome do GIF da planilha removendo espaços
-            nome_gif = str(row['Gif']).strip()
-            
-            try:
-                # Procura o GIF direto na raiz do repositório
-                st.image(nome_gif, caption="Nosso Momento!", use_container_width=True)
-            except Exception:
-                try:
-                    # Segunda tentativa caso esteja em letras minúsculas na planilha
-                    st.image(nome_gif.lower(), caption="Nosso Momento!", use_container_width=True)
-                except Exception:
-                    st.error(f"🎬 O arquivo '{nome_gif}' não foi encontrado na raiz do seu GitHub. Verifique o nome na planilha!")
-        st.markdown("<br>", unsafe_allow_html=True)
-
-
-# ==========================================
-# TELA 3: NOSSO DIÁRIO / MEMÓRIAS
-# ==========================================
-elif tela_selecionada == "📸 Nosso Diário":
-    st.title("📸 Nosso Diário de Memórias")
-    st.write("Um cantinho para relembrar os instantes mais doces da nossa história.")
-    st.markdown("---")
-    
-    st.subheader("🌹 O Princípio de Tudo")
-    st.write("“Tu te tornas eternamente responsável por aquilo que cativas.”")
-    
-    # Carrega a imagem da tela de carregamento direto da raiz do repositório
-    try:
-        st.image("tela de carregamento.jpg", caption="Onde o nosso universo começou...", use_container_width=True)
-    except:
-        st.info("📸 Preparando nosso mural de fotos...")
-        
-    st.markdown("---")
-    st.subheader("✨ Nossa Sintonia")
-    
-    # Exibe o gif da rosa direto da raiz do repositório
-    try:
-        st.image("rosa.gif", caption="Você é única no mundo para mim.", use_container_width=True)
-    except:
-        pass
+        # Puxa os dados usando o nome exato das abas da sua planilha
+        df_capa = pd.read_csv(f"{BASE_URL}&sheet=Capa")
+        df_elogios = pd.read_csv(f"{
