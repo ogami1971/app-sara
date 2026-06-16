@@ -37,7 +37,7 @@ st.markdown("""
 
 # 2. Conexão Direta com os Dados da Planilha
 # IMPORTANTE: Substitua "SEU_ID_DA_PLANILHA" pelo ID real da sua planilha!
-ID_PLANILHA = "SEU_ID_DA_PLANILHA"
+ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHIeg36F8"
 
 @st.cache_data(ttl=15)
 def carregar_dados():
