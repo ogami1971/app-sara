@@ -1,6 +1,7 @@
 import streamlit as st
-import pandas as pd
 import random
+import csv
+import urllib.request
 from datetime import datetime
 
 # 1. Configuração da Página do Aplicativo
@@ -35,29 +36,35 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Conexão Direta com os Dados da Planilha
+# 2. Conexão Nativa com os Dados da Planilha (Evita erros de compilação)
 # IMPORTANTE: Substitua "SEU_ID_DA_PLANILHA" pelo ID real da sua planilha!
-ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHIeg36F8"
+ID_PLANILHA = "SEU_ID_DA_PLANILHA"
 
 @st.cache_data(ttl=15)
-def carregar_dados():
+def ler_aba_csv(url):
     try:
-        # Puxa cada aba de forma direta e sem quebras de linha que causam erro
-        df_capa = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=0")
-        df_elogios = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=123456")
-        df_missoes = pd.read_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=789101")
-        return df_capa, df_elogios, df_missoes
-    except Exception:
-        # Backup caso o ID da planilha ainda não esteja configurado
-        df_capa = pd.DataFrame([{"Titulo_App": "Nosso Universo", "Subtitulo_App": "Bem-vinda, minha rosa."}])
-        df_elogios = pd.DataFrame([{"Frase": "Você é o meu momento favorito do dia!"}, {"Frase": "Seu sorriso ilumina meu mundo."}])
-        df_missoes = pd.DataFrame([
-            {"ID": 1, "Titulo": "Cozinhar algo juntos", "Tipo_Missao": "Média", "Status": "Pendente", "Gif": "comida.gif"},
-            {"ID": 2, "Titulo": "Assistir um filme cobertos", "Tipo_Missao": "Fácil", "Status": "Concluída", "Gif": "coberta.gif"}
-        ])
-        return df_capa, df_elogios, df_missoes
+        resposta = urllib.request.urlopen(url)
+        linhas = [linha.decode('utf-8') for list_linha in [resposta.read().splitlines()] for linha in list_linha]
+        leitor = csv.DictReader(linhas)
+        return list(leitor)
+    except:
+        return []
 
-df_capa, df_elogios, df_missoes = carregar_dados()
+def carregar_dados():
+    capa = ler_aba_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=0")
+    elogios = ler_aba_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=123456")
+    missoes = ler_aba_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=789101")
+    
+    # Backups de segurança caso a planilha ainda não esteja mapeada com o ID correto
+    if not capa: capa = [{"Titulo_App": "Nosso Universo", "Subtitulo_App": "Bem-vinda, minha rosa."}]
+    if not elogios: elogios = [{"Frase": "Você é o meu momento favorito do dia!"}, {"Frase": "Seu sorriso ilumina meu mundo."}]
+    if not missoes: missoes = [
+        {"ID": "1", "Titulo": "Cozinhar algo juntos", "Tipo_Missao": "Média", "Status": "Pendente", "Gif": "comida.gif"},
+        {"ID": "2", "Titulo": "Assistir um filme cobertos", "Tipo_Missao": "Fácil", "Status": "Concluída", "Gif": "coberta.gif"}
+    ]
+    return capa[0], elogios, missoes
+
+capa_data, df_elogios, df_missoes = carregar_dados()
 
 
 # 3. MENU LATERAL DE NAVEGAÇÃO
@@ -79,13 +86,14 @@ if tela_selecionada == "🌌 Início & Carinho":
     except:
         st.warning("🌌 Carregando imagem de capa...")
     
-    st.title(f"✨ {df_capa['Titulo_App'].iloc[0]} ✨")
-    st.markdown(f"<h3>{df_capa['Subtitulo_App'].iloc[0]}</h3>", unsafe_allow_html=True)
+    st.title(f"✨ {capa_data.get('Titulo_App', 'Nosso Universo')} ✨")
+    st.markdown(f"<h3>{capa_data.get('Subtitulo_App', 'Bem-vinda')}</h3>", unsafe_allow_html=True)
     st.markdown("---")
 
     st.subheader("❤️ Um carinho para o seu dia")
     if st.button("✨ Quer um carinho? (Clique aqui) ✨"):
-        frase_sorteada = random.choice(df_elogios['Frase'].tolist())
+        frases = [item['Frase'] for item in df_elogios if 'Frase' in item]
+        frase_sorteada = random.choice(frases) if frases else "Você é especial!"
         st.balloons() 
         st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic;'>\"{frase_sorteada}\"</div>", unsafe_allow_html=True)
     else:
@@ -100,21 +108,21 @@ elif tela_selecionada == "🎯 Missões Secretas":
     st.write("Aqui estão os nossos desafios! Clique no botão de cada uma para ver uma surpresa animada:")
     st.markdown("---")
 
-    for index, row in df_missoes.iterrows():
-        status_icon = "✅" if row['Status'] == "Concluída" else "⏳"
-        classe_texto = "missao-concluida" if row['Status'] == "Concluída" else ""
+    for row in df_missoes:
+        status_icon = "✅" if row.get('Status') == "Concluída" else "⏳"
+        classe_texto = "missao-concluida" if row.get('Status') == "Concluída" else ""
         
         st.markdown(f"""
             <div class='card'>
-                <span style='float: right; background: #FF4B4B; padding: 2px 8px; border-radius: 10px; font-size: 12px;'>{row['Tipo_Missao']}</span>
-                <h4 class='{classe_texto}'>{status_icon} {row['Titulo']}</h4>
-                <p style='font-size: 13px; color: #aaa; margin-bottom: 0px;'>Status: {row['Status']}</p>
+                <span style='float: right; background: #FF4B4B; padding: 2px 8px; border-radius: 10px; font-size: 12px;'>{row.get('Tipo_Missao', 'Normal')}</span>
+                <h4 class='{classe_texto}'>{status_icon} {row.get('Titulo', 'Missão')}</h4>
+                <p style='font-size: 13px; color: #aaa; margin-bottom: 0px;'>Status: {row.get('Status', 'Pendente')}</p>
             </div>
         """, unsafe_allow_html=True)
         
-        if st.button(f"🔍 Ver Surpresa: {row['Titulo']}", key=f"btn_{row['ID']}"):
-            st.write(f"**Nível:** Essa missão é considerada *{row['Tipo_Missao']}*. Vamos cumprir juntos?")
-            nome_gif = str(row['Gif']).strip()
+        if st.button(f"🔍 Ver Surpresa: {row.get('Titulo')}", key=f"btn_{row.get('ID')}"):
+            st.write(f"**Nível:** Essa missão é considerada *{row.get('Tipo_Missao')}*. Vamos cumprir juntos?")
+            nome_gif = str(row.get('Gif', '')).strip()
             try:
                 st.image(nome_gif, caption="Nosso Momento!", use_container_width=True)
             except Exception:
@@ -136,4 +144,34 @@ elif tela_selecionada == "📸 Nosso Diário":
     st.write("“Tu te tornas eternamente responsável por aquilo que cativas.”")
     
     try:
-        st.image("tela de carregamento.jpg", caption="
+        st.image("tela de carregamento.jpg", caption="Onde o nosso universo começou...", use_container_width=True)
+    except:
+        st.info("📸 Preparando nosso mural de fotos...")
+        
+    st.markdown("---")
+    st.subheader("✨ Nossa Sintonia")
+    try:
+        st.image("rosa.gif", caption="Você é única no mundo para mim.", use_container_width=True)
+    except:
+        pass
+
+
+# ==========================================
+# TELA 4: ENVIAR CARINHO 
+# ==========================================
+elif tela_selecionada == "💬 Enviar Carinho":
+    st.title("💬 Deixe um Recadinho para o Denner")
+    st.write("Escolha uma reação e escreva algo fofo!")
+    st.markdown("---")
+    
+    st.subheader("1. Como você está se sentindo agora?")
+    reacao_escolhida = st.selectbox(
+        "Selecione uma reação:",
+        ["Selecione...", "Carinhosa (Rosa)", "Com saudades (Raposa)", "Manhosa (Mirra)", "Brava (Bravinha)", "Divertida (Língua)"]
+    )
+    
+    mapeamento_gifs = {
+        "Carinhosa (Rosa)": "rosa.gif",
+        "Com saudades (Raposa)": "raposa.gif",
+        "Manhosa (Mirra)": "Gato fazendo mirra.gif",
+        "Brava (Bravinha)": "brava.gif",
