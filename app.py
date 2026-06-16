@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import random
 
-# 1. Configuração da Página
+# 1. Configuração da Página do Aplicativo
 st.set_page_config(
     page_title="App Pequeno Príncipe - Sara",
     page_icon="🌹",
@@ -10,7 +10,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilização CSS Premium e Romântica
+# Estilização Visual Premium e Romântica (Fundo escuro e detalhes em ouro)
 st.markdown("""
     <style>
     .main { background-color: #0B132B; color: #FFFFFF; }
@@ -21,6 +21,8 @@ st.markdown("""
         background-color: #FF4B4B; color: white; 
         border-radius: 20px; width: 100%; font-size: 16px;
         box-shadow: 0px 4px 10px rgba(255, 75, 75, 0.3);
+        border: none;
+        padding: 10px;
     }
     .stButton>button:hover { background-color: #FF7575; color: white; }
     .card {
@@ -33,10 +35,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 2. Conexão com os Dados da Planilha
-# IMPORTANTE: Substitua o "SEU_ID_DA_PLANILHA" pelo código real da URL da sua planilha!
+# Lembre-se de colocar o ID correto da sua planilha no lugar de "SEU_ID_DA_PLANILHA"
 SHEET_URL = "https://docs.google.com/spreadsheets/d/SEU_ID_DA_PLANILHA/export?format=csv"
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=15)
 def carregar_dados():
     try:
         df_capa = pd.read_csv(f"{SHEET_URL}&gid=0")
@@ -44,12 +46,13 @@ def carregar_dados():
         df_missoes = pd.read_csv(f"{SHEET_URL}&gid=789101")
         return df_capa, df_elogios, df_missoes
     except:
-        # Dados de backup caso a planilha dê algum erro de carregamento ou autenticação
+        # Dados de backup caso o Google Sheets não responda
         df_capa = pd.DataFrame([{"Titulo_App": "Nosso Universo", "Subtitulo_App": "Bem-vinda, minha rosa."}])
         df_elogios = pd.DataFrame([{"Frase": "Você é o meu momento favorito do dia!"}, {"Frase": "Seu sorriso ilumina meu mundo."}])
         df_missoes = pd.DataFrame([
             {"ID": 1, "Titulo": "Cozinhar algo juntos", "Tipo_Missao": "Média", "Status": "Pendente", "Gif": "comida.gif"},
-            {"ID": 2, "Titulo": "Assistir um filme cobertos", "Tipo_Missao": "Fácil", "Status": "Concluída", "Gif": "coberta.gif"}
+            {"ID": 2, "Titulo": "Assistir um filme cobertos", "Tipo_Missao": "Fácil", "Status": "Concluída", "Gif": "coberta.gif"},
+            {"ID": 3, "Titulo": "Dizer quem ama mais sem brigar", "Tipo_Missao": "Difícil", "Status": "Pendente", "Gif": "brava.gif"}
         ])
         return df_capa, df_elogios, df_missoes
 
@@ -57,13 +60,11 @@ df_capa, df_elogios, df_missoes = carregar_dados()
 
 
 # 3. MENU LATERAL DE NAVEGAÇÃO
-st.sidebar.title("🌌 Navegação")
-st.sidebar.markdown("Escolha o canto do nosso universo que deseja visitar:")
+st.sidebar.title("🌌 Menu Interativo")
 tela_selecionada = st.sidebar.radio(
-    "Ir para:",
+    "Navegue pelo nosso mundo:",
     ["🌌 Início & Carinho", "🎯 Missões Secretas", "📸 Nosso Diário"]
 )
-
 st.sidebar.markdown("---")
 st.sidebar.info("Feito com ❤️ por Denner")
 
@@ -72,13 +73,11 @@ st.sidebar.info("Feito com ❤️ por Denner")
 # TELA 1: INÍCIO & CARINHO
 # ==========================================
 if tela_selecionada == "🌌 Início & Carinho":
+    # Carrega a imagem da capa do Pequeno Príncipe que você enviou
     try:
-        st.image("Imagens/Pequeno Príncipe.jpg", use_column_width=True)
-    except Exception:
-        try:
-            st.image("Imagens/Pequeno_Principe.jpg", use_column_width=True)
-        except Exception:
-            st.warning("🌌 (O banner principal está carregando no servidor!)")
+        st.image("Imagens/capa.jpg", use_container_width=True)
+    except:
+        st.warning("🌌 Carregando imagem de capa...")
     
     st.title(f"✨ {df_capa['Titulo_App'].iloc[0]} ✨")
     st.markdown(f"<h3>{df_capa['Subtitulo_App'].iloc[0]}</h3>", unsafe_allow_html=True)
@@ -87,39 +86,42 @@ if tela_selecionada == "🌌 Início & Carinho":
     st.subheader("❤️ Um carinho para o seu dia")
     if st.button("✨ Quer um carinho? (Clique aqui) ✨"):
         frase_sorteada = random.choice(df_elogios['Frase'].tolist())
-        st.balloons()
+        st.balloons() # Efeito fofo de balões subindo
         st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic;'>\"{frase_sorteada}\"</div>", unsafe_allow_html=True)
     else:
-        st.info("Clique no botão acima para ler o elogio do momento!")
+        st.info("Clique no botão acima para receber sua dose diária de amor!")
 
 
 # ==========================================
-# TELA 2: MISSÕES SECRETAS
+# TELA 2: MISSÕES SECRETAS (COM OS BOTOES FUNCIONANDO)
 # ==========================================
 elif tela_selecionada == "🎯 Missões Secretas":
     st.title("🎯 Nossas Missões Românticas")
-    st.write("Cumpra as missões com o seu namorado e clique nelas para liberar as surpresas!")
+    st.write("Aqui estão os nossos desafios! Clique no botão de cada uma para ver uma surpresa animada:")
     st.markdown("---")
 
     for index, row in df_missoes.iterrows():
         status_icon = "✅" if row['Status'] == "Concluída" else "⏳"
         classe_texto = "missao-concluida" if row['Status'] == "Concluída" else ""
         
+        # Exibe o cartão visual da missão
         st.markdown(f"""
             <div class='card'>
                 <span style='float: right; background: #FF4B4B; padding: 2px 8px; border-radius: 10px; font-size: 12px;'>{row['Tipo_Missao']}</span>
                 <h4 class='{classe_texto}'>{status_icon} {row['Titulo']}</h4>
-                <p style='font-size: 13px; color: #aaa;'>Status Atual: {row['Status']}</p>
+                <p style='font-size: 13px; color: #aaa; margin-bottom: 0px;'>Status: {row['Status']}</p>
             </div>
         """, unsafe_allow_html=True)
         
-        if st.button(f"🔍 Abrir Detalhes da Missão: {row['Titulo']}", key=f"btn_{row['ID']}"):
-            st.write(f"**Detalhes:** Esta missão é considerada *{row['Tipo_Missao']}*. Vamos fazer acontecer?")
+        # Botão interativo para abrir o GIF correspondente
+        if st.button(f"🔍 Ver Surpresa: {row['Titulo']}", key=f"btn_{row['ID']}"):
+            st.write(f"**Nível:** Essa missão é considerada *{row['Tipo_Missao']}*. Vamos cumprir juntos?")
             
+            # Puxa o nome exato do GIF cadastrado na coluna 'Gif' da sua planilha (Ex: comida.gif)
             try:
-                st.image(f"Imagens/{row['Gif']}", caption="Nosso momento!", use_column_width=True)
-            except Exception:
-                st.error("🎬 O GIF dessa missão ainda está carregando ou não foi encontrado na pasta Imagens.")
+                st.image(f"Imagens/{row['Gif']}", caption="Nosso Momento!", use_container_width=True)
+            except:
+                st.error("🎬 Ih, não achei o GIF especificado na planilha dentro da pasta Imagens!")
         st.markdown("<br>", unsafe_allow_html=True)
 
 
@@ -128,13 +130,23 @@ elif tela_selecionada == "🎯 Missões Secretas":
 # ==========================================
 elif tela_selecionada == "📸 Nosso Diário":
     st.title("📸 Nosso Diário de Memórias")
-    st.write("Um espaço para guardar as lembranças mais bonitas do que já vivemos.")
+    st.write("Um cantinho para relembrar os instantes mais doces da nossa história.")
     st.markdown("---")
     
-    st.subheader("🌹 O Início de Tudo")
+    st.subheader("🌹 O Princípio de Tudo")
     st.write("“Tu te tornas eternamente responsável por aquilo que cativas.”")
     
+    # Carrega a imagem fofa do principezinho sentado com a rosa que você mandou
     try:
-        st.image("Imagens/tela de carregamento.jpg", caption="Onde nosso universo começou...", use_column_width=True)
-    except Exception:
-        st.info("📸 (Sua foto de introdução está sendo ajustada pelo servidor!)")
+        st.image("Imagens/tela de carregamento.jpg", caption="Onde o nosso universo começou...", use_container_width=True)
+    except:
+        st.info("📸 Preparando nosso mural de fotos...")
+        
+    st.markdown("---")
+    st.subheader("✨ Nossa Sintonia")
+    
+    # Exibe o gif clássico do Pequeno Príncipe sentindo o cheiro da Rosa
+    try:
+        st.image("Imagens/rosa.gif", caption="Você é única no mundo para mim.", use_container_width=True)
+    except:
+        pass
