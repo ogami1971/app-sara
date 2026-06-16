@@ -4,7 +4,7 @@ import csv
 import urllib.request
 from datetime import datetime
 
-# 1. Configuração da Página do Aplicativo
+# 1. CONFIGURAÇÃO DA PÁGINA
 st.set_page_config(
     page_title="App Pequeno Príncipe - Sara",
     page_icon="🌹",
@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Estilização Visual Premium e Romântica (Fundo escuro e detalhes em ouro)
+# Estilização CSS customizada
 st.markdown("""
     <style>
     .main { background-color: #0B132B; color: #FFFFFF; }
@@ -36,10 +36,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 2. Conexão Nativa com os Dados da Planilha (Evita erros de compilação)
-# IMPORTANTE: Substitua "SEU_ID_DA_PLANILHA" pelo ID real da sua planilha!
+# Substitua pelo ID real da sua planilha pública
 ID_PLANILHA = "SEU_ID_DA_PLANILHA"
 
+# 2. INICIALIZAÇÃO DO ESTADO DA SESSÃO (Para a aba de Carinhos)
+if "historico_carinhos" not in st.session_state:
+    st.session_state["historico_carinhos"] = []
+
+# 3. FUNÇÕES DE LEITURA DE DADOS
 @st.cache_data(ttl=15)
 def ler_aba_csv(url):
     try:
@@ -55,7 +59,6 @@ def carregar_dados():
     elogios = ler_aba_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=123456")
     missoes = ler_aba_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=789101")
     
-    # Backups de segurança caso a planilha ainda não esteja mapeada com o ID correto
     if not capa: capa = [{"Titulo_App": "Nosso Universo", "Subtitulo_App": "Bem-vinda, minha rosa."}]
     if not elogios: elogios = [{"Frase": "Você é o meu momento favorito do dia!"}, {"Frase": "Seu sorriso ilumina meu mundo."}]
     if not missoes: missoes = [
@@ -66,8 +69,7 @@ def carregar_dados():
 
 capa_data, df_elogios, df_missoes = carregar_dados()
 
-
-# 3. MENU LATERAL DE NAVEGAÇÃO
+# 4. MENU LATERAL
 st.sidebar.title("🌌 Menu Interativo")
 tela_selecionada = st.sidebar.radio(
     "Navegue pelo nosso mundo:",
@@ -76,42 +78,31 @@ tela_selecionada = st.sidebar.radio(
 st.sidebar.markdown("---")
 st.sidebar.info("Feito com ❤️ por Denner")
 
+# 5. LÓGICA DAS TELAS
 
-# ==========================================
-# TELA 1: INÍCIO & CARINHO
-# ==========================================
+# --- TELA 1: INÍCIO ---
 if tela_selecionada == "🌌 Início & Carinho":
-    try:
-        st.image("capa.jpg", use_container_width=True)
-    except:
-        st.warning("🌌 Carregando imagem de capa...")
-    
+    try: st.image("capa.jpg", use_container_width=True)
+    except: st.warning("🌌 Carregando imagem de capa...")
     st.title(f"✨ {capa_data.get('Titulo_App', 'Nosso Universo')} ✨")
     st.markdown(f"<h3>{capa_data.get('Subtitulo_App', 'Bem-vinda')}</h3>", unsafe_allow_html=True)
     st.markdown("---")
-
     st.subheader("❤️ Um carinho para o seu dia")
     if st.button("✨ Quer um carinho? (Clique aqui) ✨"):
         frases = [item['Frase'] for item in df_elogios if 'Frase' in item]
         frase_sorteada = random.choice(frases) if frases else "Você é especial!"
         st.balloons() 
         st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic;'>\"{frase_sorteada}\"</div>", unsafe_allow_html=True)
-    else:
-        st.info("Clique no botão acima para receber sua dose diária de amor!")
+    else: st.info("Clique no botão acima para receber sua dose diária de amor!")
 
-
-# ==========================================
-# TELA 2: MISSÕES SECRETAS
-# ==========================================
+# --- TELA 2: MISSÕES ---
 elif tela_selecionada == "🎯 Missões Secretas":
     st.title("🎯 Nossas Missões Românticas")
     st.write("Aqui estão os nossos desafios! Clique no botão de cada uma para ver uma surpresa animada:")
     st.markdown("---")
-
     for row in df_missoes:
         status_icon = "✅" if row.get('Status') == "Concluída" else "⏳"
         classe_texto = "missao-concluida" if row.get('Status') == "Concluída" else ""
-        
         st.markdown(f"""
             <div class='card'>
                 <span style='float: right; background: #FF4B4B; padding: 2px 8px; border-radius: 10px; font-size: 12px;'>{row.get('Tipo_Missao', 'Normal')}</span>
@@ -119,59 +110,65 @@ elif tela_selecionada == "🎯 Missões Secretas":
                 <p style='font-size: 13px; color: #aaa; margin-bottom: 0px;'>Status: {row.get('Status', 'Pendente')}</p>
             </div>
         """, unsafe_allow_html=True)
-        
         if st.button(f"🔍 Ver Surpresa: {row.get('Titulo')}", key=f"btn_{row.get('ID')}"):
             st.write(f"**Nível:** Essa missão é considerada *{row.get('Tipo_Missao')}*. Vamos cumprir juntos?")
             nome_gif = str(row.get('Gif', '')).strip()
-            try:
-                st.image(nome_gif, caption="Nosso Momento!", use_container_width=True)
+            try: st.image(nome_gif, caption="Nosso Momento!", use_container_width=True)
             except Exception:
-                try:
-                    st.image(nome_gif.lower(), caption="Nosso Momento!", use_container_width=True)
-                except Exception:
-                    st.error(f"🎬 O arquivo '{nome_gif}' não foi localizado no repositório.")
+                try: st.image(nome_gif.lower(), caption="Nosso Momento!", use_container_width=True)
+                except Exception: st.error(f"🎬 O arquivo '{nome_gif}' não foi localizado.")
         st.markdown("<br>", unsafe_allow_html=True)
 
-
-# ==========================================
-# TELA 3: NOSSO DIÁRIO / MEMÓRIAS
-# ==========================================
+# --- TELA 3: DIÁRIO ---
 elif tela_selecionada == "📸 Nosso Diário":
     st.title("📸 Nosso Diário de Memórias")
     st.markdown("---")
-    
     st.subheader("🌹 O Princípio de Tudo")
     st.write("“Tu te tornas eternamente responsável por aquilo que cativas.”")
-    
-    try:
-        st.image("tela de carregamento.jpg", caption="Onde o nosso universo começou...", use_container_width=True)
-    except:
-        st.info("📸 Preparando nosso mural de fotos...")
-        
+    try: st.image("tela de carregamento.jpg", caption="Onde o nosso universo começou...", use_container_width=True)
+    except: st.info("📸 Preparando nosso mural de fotos...")
     st.markdown("---")
     st.subheader("✨ Nossa Sintonia")
-    try:
-        st.image("rosa.gif", caption="Você é única no mundo para mim.", use_container_width=True)
-    except:
-        pass
+    try: st.image("rosa.gif", caption="Você é única no mundo para mim.", use_container_width=True)
+    except: pass
 
-
-# ==========================================
-# TELA 4: ENVIAR CARINHO 
-# ==========================================
+# --- TELA 4: ENVIAR CARINHO (COMPLETADA) ---
 elif tela_selecionada == "💬 Enviar Carinho":
-    st.title("💬 Deixe um Recadinho para o Denner")
-    st.write("Escolha uma reação e escreva algo fofo!")
+    st.title("💬 Espaço do Carinho")
+    st.write("Como você está se sentindo agora, minha rosa? Escolha uma reação ou escreva uma mensagem para atualizar nosso espaço em tempo real!")
     st.markdown("---")
     
-    st.subheader("1. Como você está se sentindo agora?")
-    reacao_escolhida = st.selectbox(
-        "Selecione uma reação:",
-        ["Selecione...", "Carinhosa (Rosa)", "Com saudades (Raposa)", "Manhosa (Mirra)", "Brava (Bravinha)", "Divertida (Língua)"]
-    )
+    # Mapeamento amigável para os arquivos de GIF correspondentes na raiz do seu repositório
+    opcoes_reacoes = {
+        "Selecione uma reação...": None,
+        "Estou com saudades 🦊": "raposa.gif",
+        "Quero dengo / manhosa 🐱": "Gato fazendo mirra.gif",
+        "Tô brava com você! 😤": "brava.gif",
+        "Te acho um bobo (Deboche) 😜": "deboche.gif",
+        "Mostrando a língua para você 👅": "Monstrando a lingua.gif",
+        "Estou com fome! 🍕": "comida.gif",
+        "Quero coberta e cafuné 🛌": "coberta.gif"
+    }
     
-    mapeamento_gifs = {
-        "Carinhosa (Rosa)": "rosa.gif",
-        "Com saudades (Raposa)": "raposa.gif",
-        "Manhosa (Mirra)": "Gato fazendo mirra.gif",
-        "Brava (Bravinha)": "brava.gif",
+    # Interface para entrada de dados da Sara
+    reacao_escolhida = st.selectbox("Como está seu humor hoje?", list(opcoes_reacoes.keys()))
+    mensagem_personalizada = st.text_input("Quer deixar um recado extra? (Opcional)", placeholder="Escreva aqui...")
+    
+    if st.button("🚀 Enviar para o Nosso Universo"):
+        agora = datetime.now().strftime("%H:%M")
+        
+        # Só processa se ela escolheu uma reação válida ou escreveu algo
+        if reacao_escolhida != "Selecione uma reação..." or mensagem_personalizada.strip() != "":
+            # Monta o pacote de dados do carinho atual
+            novo_carinho = {
+                "hora": agora,
+                "reacao_texto": reacao_escolhida if reacao_escolhida != "Selecione uma reação..." else None,
+                "gif": opcoes_reacoes[reacao_escolhida] if reacao_escolhida != "Selecione uma reação..." else None,
+                "mensagem": mensagem_personalizada.strip() if mensagem_personalizada.strip() != "" else None
+            }
+            
+            # Insere no topo da lista para aparecer o mais recente primeiro
+            st.session_state["historico_carinhos"].insert(0, novo_carinho)
+            st.toast("Carinho enviado com sucesso! ✨", icon="❤️")
+        else:
+            st.
