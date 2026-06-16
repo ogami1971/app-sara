@@ -171,4 +171,4 @@ elif tela_selecionada == "💬 Enviar Carinho":
             st.session_state["historico_carinhos"].insert(0, novo_carinho)
             st.toast("Carinho enviado com sucesso! ✨", icon="❤️")
         else:
-            st.
+ 
