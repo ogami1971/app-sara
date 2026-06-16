@@ -51,7 +51,7 @@ def carregar_dados():
         df_elogios = pd.DataFrame([{"Frase": "Você é o meu momento favorito do dia!"}, {"Frase": "Seu sorriso ilumina meu mundo."}])
         df_missoes = pd.DataFrame([
             {"ID": 1, "Titulo": "Cozinhar algo juntos", "Tipo_Missao": "Média", "Status": "Pendente", "Gif": "comida.gif"},
-            {"ID": 2, "Titulo": "Assistir um filme cobertos", "Tipo_Missao": "Fácil", "Status": "Concluída", "Gif": "coberta.gif"},
+            {"ID": 2, "Transit": "Assistir um filme cobertos", "Tipo_Missao": "Fácil", "Status": "Concluída", "Gif": "coberta.gif"},
             {"ID": 3, "Titulo": "Dizer quem ama mais sem brigar", "Tipo_Missao": "Difícil", "Status": "Pendente", "Gif": "brava.gif"}
         ])
         return df_capa, df_elogios, df_missoes
@@ -62,7 +62,7 @@ df_capa, df_elogios, df_missoes = carregar_dados()
 # 3. MENU LATERAL DE NAVEGAÇÃO
 st.sidebar.title("🌌 Menu Interativo")
 tela_selecionada = st.sidebar.radio(
-    "Navegue pelo nosso mundo:",
+    "Navegue pelo nosso world:",
     ["🌌 Início & Carinho", "🎯 Missões Secretas", "📸 Nosso Diário"]
 )
 st.sidebar.markdown("---")
@@ -73,9 +73,9 @@ st.sidebar.info("Feito com ❤️ por Denner")
 # TELA 1: INÍCIO & CARINHO
 # ==========================================
 if tela_selecionada == "🌌 Início & Carinho":
-    # Carrega a imagem da capa do Pequeno Príncipe que você enviou
+    # Carrega a imagem da capa direto da raiz do repositório
     try:
-        st.image("Imagens/capa.jpg", use_container_width=True)
+        st.image("capa.jpg", use_container_width=True)
     except:
         st.warning("🌌 Carregando imagem de capa...")
     
@@ -93,7 +93,7 @@ if tela_selecionada == "🌌 Início & Carinho":
 
 
 # ==========================================
-# TELA 2: MISSÕES SECRETAS (COM OS BOTOES FUNCIONANDO)
+# TELA 2: MISSÕES SECRETAS
 # ==========================================
 elif tela_selecionada == "🎯 Missões Secretas":
     st.title("🎯 Nossas Missões Românticas")
@@ -117,11 +117,18 @@ elif tela_selecionada == "🎯 Missões Secretas":
         if st.button(f"🔍 Ver Surpresa: {row['Titulo']}", key=f"btn_{row['ID']}"):
             st.write(f"**Nível:** Essa missão é considerada *{row['Tipo_Missao']}*. Vamos cumprir juntos?")
             
-            # Puxa o nome exato do GIF cadastrado na coluna 'Gif' da sua planilha (Ex: comida.gif)
+            # Pega o nome do GIF da planilha removendo espaços
+            nome_gif = str(row['Gif']).strip()
+            
             try:
-                st.image(f"Imagens/{row['Gif']}", caption="Nosso Momento!", use_container_width=True)
-            except:
-                st.error("🎬 Ih, não achei o GIF especificado na planilha dentro da pasta Imagens!")
+                # Procura o GIF direto na raiz do repositório
+                st.image(nome_gif, caption="Nosso Momento!", use_container_width=True)
+            except Exception:
+                try:
+                    # Segunda tentativa caso esteja em letras minúsculas na planilha
+                    st.image(nome_gif.lower(), caption="Nosso Momento!", use_container_width=True)
+                except Exception:
+                    st.error(f"🎬 O arquivo '{nome_gif}' não foi encontrado na raiz do seu GitHub. Verifique o nome na planilha!")
         st.markdown("<br>", unsafe_allow_html=True)
 
 
@@ -136,17 +143,17 @@ elif tela_selecionada == "📸 Nosso Diário":
     st.subheader("🌹 O Princípio de Tudo")
     st.write("“Tu te tornas eternamente responsável por aquilo que cativas.”")
     
-    # Carrega a imagem fofa do principezinho sentado com a rosa que você mandou
+    # Carrega a imagem da tela de carregamento direto da raiz do repositório
     try:
-        st.image("Imagens/tela de carregamento.jpg", caption="Onde o nosso universo começou...", use_container_width=True)
+        st.image("tela de carregamento.jpg", caption="Onde o nosso universo começou...", use_container_width=True)
     except:
         st.info("📸 Preparando nosso mural de fotos...")
         
     st.markdown("---")
     st.subheader("✨ Nossa Sintonia")
     
-    # Exibe o gif clássico do Pequeno Príncipe sentindo o cheiro da Rosa
+    # Exibe o gif da rosa direto da raiz do repositório
     try:
-        st.image("Imagens/rosa.gif", caption="Você é única no mundo para mim.", use_container_width=True)
+        st.image("rosa.gif", caption="Você é única no mundo para mim.", use_container_width=True)
     except:
         pass
