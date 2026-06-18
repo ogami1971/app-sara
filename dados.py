@@ -165,3 +165,57 @@ def carregar_dados():
         capa = [{"Titulo_App": "Nosso Universo", "Subtitulo_App": "Bem-vinda, minha rosa."}]
         
     return capa[0], elogios_customizados, missoes_finais
+
+import streamlit as st
+
+def carregar_conquistas():
+    """
+    Carrega as conquistas e valida dinamicamente se os requisitos foram atingidos
+    com base no progresso real de missões e cupons.
+    """
+    # 1. Pega os dados atuais para checar o progresso
+    lista_cupons = st.session_state.get("lista_cupons", [])
+    
+    # 2. Faz as contagens de validação
+    # Conta quantos cupons de cafuné foram usados (id 4 na nossa lista)
+    cafunes_usados = sum(1 for c in lista_cupons if c["id"] == 4 and c["usado"])
+    # Conta quantos cupons de cinema foram usados (id 3 na nossa lista)
+    cinemas_usados = sum(1 for c in lista_cupons if c["id"] == 3 and c["usado"])
+    
+    # Se você tiver um dataframe de missões, pode contar as concluídas assim:
+    # missoes_concluidas = df_missoes[df_missoes['Concluída'] == True].shape[0]
+    missoes_concluidas = 0 # Valor base provisório
+
+    # 3. Define a lista de conquistas com a regra de validação em tempo real
+    conquistas = [
+        {
+            "id": "cafune_master",
+            "titulo": "🥇 Maratonista de Cafuné",
+            "descricao": "Resgate o Cupom de Cafuné pelo menos 1 vez no app.",
+            "icone": "💆‍♀️",
+            "desbloqueada": cafunes_usados >= 1
+        },
+        {
+            "id": "critica_cinema",
+            "titulo": "🍿 Crítica de Cinema",
+            "descricao": "Resgate o Cupom de Cinema em Casa pelo menos 1 vez.",
+            "icone": "🎬",
+            "desbloqueada": cinemas_usados >= 1
+        },
+        {
+            "id": "primeiro_passo",
+            "titulo": "✨ O Início de Tudo",
+            "descricao": "Abra o aplicativo e navegue pelo menu interativo.",
+            "icone": "🚀",
+            "desbloqueada": True # Já começa liberada como recompensa de boas-vindas
+        },
+        {
+            "id": "mestre_rpg",
+            "titulo": "⚔️ Guerreira de Elite",
+            "descricao": "Alcance o Nível 5 na aba da nossa Jornada RPG.",
+            "icone": "👑",
+            "desbloqueada": False # Vai ativar quando integrarmos com o nível do RPG
+        }
+    ]
+    
+    return conquistas
