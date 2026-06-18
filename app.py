@@ -10,12 +10,14 @@ import rpg
 import roleta
 import contador
 
-# 🌟 ISSO DEVE SER A PRIMEIRA LINHA EXECUTÁVEL DO SEU APP.PY:
+# 🌟 CONFIGURAÇÃO ÚNICA DA PÁGINA (A primeira linha executável do app!)
 st.set_page_config(
     page_title="Universo de Amor", 
     page_icon="🌹", 
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
+
 def injetar_wallpaper_dinamico():
     temas_arquivos = {
         "pequeno_principe": "Wallpaper.jpg",       
@@ -52,13 +54,6 @@ def injetar_wallpaper_dinamico():
     except Exception:
         pass
 
-st.set_page_config(
-    page_title="App Pequeno Príncipe - Sara",
-    page_icon="🌹",
-    layout="centered",
-    initial_sidebar_state="expanded"
-)
-
 if "tema_fundo" not in st.session_state:
     st.session_state["tema_fundo"] = "padrao"
 if "historico_carinhos" not in st.session_state:
@@ -72,6 +67,12 @@ injetar_wallpaper_dinamico()
 
 capa_data, df_elogios, df_missoes = carregar_dados()
 
+# Verifica automaticamente as notificações por e-mail com o Zapier ao abrir o app
+try:
+    notificacoes.verificar_datas_comemorativas()
+except Exception:
+    pass
+
 # 🪐 MENU LATERAL EXPANDIDO COM AS NOVAS OPÇÕES MODULARES
 st.sidebar.title("🌌 Menu Interativo")
 tela_selecionada = st.sidebar.radio(
@@ -79,15 +80,16 @@ tela_selecionada = st.sidebar.radio(
     [
         "🌌 Início & Carinho", 
         "🎯 Missões Secretas", 
-        "⚔️ Nossa Jornada RPG", # Nova
-        "🎰 Roleta de Rolês",    # Nova
-        "⏳ Tempo Juntos",       # Nova
+        "⚔️ Nossa Jornada RPG",
+        "🎰 Máquina de Cupons",  # 🎟️ Adicionado perfeitamente aqui!
+        "🎲 Roleta de Rolês",    
+        "⏳ Tempo Juntos",       
         "💬 Enviar Carinho"
     ]
 )
 st.sidebar.markdown("### 🎵 Trilha Sonora")
 
-# 🌟 Atualizado com o link exato que você enviou!
+# 🌟 Link do YouTube configurado
 id_video_youtube = "pmanD_s7G3U" 
 
 # Cria o player do YouTube em miniatura dentro do menu lateral
@@ -111,6 +113,8 @@ elif tela_selecionada == "🎯 Missões Secretas":
     telas.exibir_missoes(df_missoes)
 elif tela_selecionada == "⚔️ Nossa Jornada RPG":
     rpg.exibir_rpg()
+elif tela_selecionada == "🎰 Máquina de Cupons":
+    telas.exibir_maquina_cupons()
 elif tela_selecionada == "🎰 Roleta de Rolês":
     roleta.exibir_roleta()
 elif tela_selecionada == "⏳ Tempo Juntos":
@@ -121,5 +125,3 @@ elif tela_selecionada == "⏳ Nossa Linha do Tempo":
     telas.exibir_linha_tempo()
 elif tela_selecionada == "💬 Enviar Carinho":
     telas.exibir_enviar_carinho()
-elif aba_selecionada == "🎰 Máquina de Cupons":
-    telas.exibir_maquina_cupons()
