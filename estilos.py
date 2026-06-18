@@ -3,10 +3,28 @@ import streamlit as st
 def aplicar_estilos():
     st.markdown("""
         <style>
-        .main { 
-            background-color: #0B132B; 
-            color: #FFFFFF; 
+        /* Define o Wallpaper de Fundo Interativo para todo o App */
+        [data-testid="stAppViewContainer"] {
+            background-image: url("Wallpaper.jpg"); /* Nome exato do seu arquivo */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
         }
+
+        /* Torna o container principal levemente translúcido para o fundo aparecer nos lados */
+        .main { 
+            background-color: rgba(11, 19, 43, 0.85); /* Mantém o azul escuro, mas com 85% de opacidade */
+            color: #FFFFFF; 
+            padding: 30px;
+            border-radius: 20px;
+        }
+
+        /* Garante que o menu lateral combine com o fundo se necessário */
+        [data-testid="stSidebar"] {
+            background-color: rgba(28, 37, 65, 0.95) !important;
+        }
+
         h1 { 
             color: #FFD700; 
             text-align: center; 
