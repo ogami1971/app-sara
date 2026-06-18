@@ -44,15 +44,22 @@ def exibir_missoes(df_missoes):
     st.write("Aqui estão os seus desafios temporais. Cumpra-os na vida real para ganhar XP!")
     st.markdown("---")
     
-    # 🌟 CORREÇÃO: Força a sincronia limpa com o arquivo JSON antes de tudo
+    # Força a sincronia limpa com o arquivo JSON antes de tudo
     dados.carregar_progresso_banco()
 
-    if not df_missoes:
+    # CORREÇÃO DO VALUERROR: Checagem correta para DataFrames do Pandas
+    if df_missoes is None or (hasattr(df_missoes, "empty") and df_missoes.empty) or not df_missoes:
         st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
         return
 
+    # Converte o DataFrame do Pandas com segurança para dicionários iteráveis do Python
+    if hasattr(df_missoes, "to_dict"):
+        lista_missoes = df_missoes.to_dict(orient="records")
+    else:
+        lista_missoes = df_missoes
+
     # Percorre a lista gerando um índice numérico (idx) automático para cada botão
-    for idx, missao in enumerate(df_missoes):
+    for idx, missao in enumerate(lista_missoes):
         titulo = missao.get("Titulo", missao.get("titulo", "Missão Secreta"))
         tipo = missao.get("Tipo_Missao", missao.get("tipo", "Fácil (Cotidiana)"))
         gif = missao.get("Gif", missao.get("gif", ""))
@@ -92,26 +99,7 @@ def exibir_missoes(df_missoes):
                 # Registra na lista da sessão atual do navegador
                 st.session_state["feitas_hoje"].append(id_unico_missao)
                 
-                # 🌟 CHAMA A FUNÇÃO CORRETA: Adiciona e salva no arquivo permanentemente
-                dados.adicionar_xp(xp_ganho)
-                
-                st.balloons()
-                st.success(f"Incrível! Você ganhou {xp_ganho} XP para a sua jornada! ⭐")
-                
-                # Aguarda um milissegundo para o Streamlit persistir o arquivo e recarrega
-                st.rerun()
-                
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("---")
-            
-        # Sistema de Botão Corrigido usando chaves únicas numéricas e salvamento no JSON
-        if ja_feita:
-            st.success("✅ Você já concluiu essa missão e coletou o XP!")
-        else:
-            if st.button(f"🎯 Concluir Desafio ({xp_ganho} XP)", key=f"btn_ctrl_{id_unico_missao}"):
-                st.session_state["feitas_hoje"].append(id_unico_missao)
-                
-                # 🌟 Adiciona o XP e calcula o Level Up direto na mecânica persistente!
+                # Adiciona o XP e salva no arquivo permanentemente (Chama o JSON)
                 dados.adicionar_xp(xp_ganho)
                 
                 st.balloons()
