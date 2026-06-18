@@ -8,7 +8,8 @@ def carregar_dados():
     Conecta diretamente com a sua planilha do Google Sheets e puxa os dados reais
     das abas 'Capa_app', 'Banco_De_Elogios' e 'Missoes_Romanticas'.
     """
-    ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHleg36F8"
+    # ID corrigido com o link exato que você mandou
+    ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHIeg36F8"
     
     url_capa = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Capa_app"
     url_elogios = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Banco_De_Elogios"
@@ -33,7 +34,7 @@ def carregar_dados():
         # 🎯 Carrega as missões diretamente da aba 'Missoes_Romanticas'
         df_missoes = pd.read_csv(url_missoes)
     except Exception as e:
-        # Caso ocorra falha na conexão (ex: planilha privada), cria um DataFrame estruturado vazio
+        # Caso ocorra falha na conexão, cria um DataFrame estruturado vazio e avisa na tela
         st.error("Aviso: Não foi possível ler a planilha. Verifique se o link está público (Qualquer pessoa com o link pode ler).")
         df_missoes = pd.DataFrame(columns=["ID_Missao", "Missao", "Concluida", "Tipo_Missao"])
     
