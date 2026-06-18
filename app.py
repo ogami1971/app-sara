@@ -115,3 +115,5 @@ elif tela_selecionada == "⏳ Nossa Linha do Tempo":
     telas.exibir_linha_tempo()
 elif tela_selecionada == "💬 Enviar Carinho":
     telas.exibir_enviar_carinho()
+elif aba_selecionada == "🎰 Máquina de Cupons":
+    telas.exibir_maquina_cupons()
