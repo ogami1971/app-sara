@@ -48,7 +48,15 @@ def injetar_wallpaper_dinamico():
             [data-testid="stSidebar"], [data-testid="stSidebarUserContent"] {{
                 background-color: rgba(20, 27, 48, 0.9) !important;
             }}
+            /* 🎯 Mata o texto puro do botão de recolher a sidebar */
+            [data-testid="collapsedControl"] {{
+                color: transparent !important;
+                font-size: 0px !important;
+            }}
             
+            [data-testid="collapsedControl"] button {{
+                color: white !important; /* Mantém a setinha visível se ela carregar */
+            }}
             /* 🌟 ENGENHARIA DISFARÇADA: Esconde o bloco de texto bugado do topo */
             [data-testid="stHeader"] {{
                 background-color: transparent !important;
