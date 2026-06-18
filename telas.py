@@ -42,7 +42,7 @@ def exibir_missoes(df_missoes):
     st.write("Aqui estão os seus desafios temporais. Cumpra-os na vida real para ganhar XP!")
     st.markdown("---")
     
-    # Inicializa variáveis de controle se não existirem
+    # Inicializa variáveis de controle de XP se não existirem
     if "xp_total" not in st.session_state:
         st.session_state["xp_total"] = 0
     if "missoes_concluidas_count" not in st.session_state:
@@ -50,49 +50,57 @@ def exibir_missoes(df_missoes):
     if "feitas_hoje" not in st.session_state:
         st.session_state["feitas_hoje"] = []
 
-    # O df_missoes aqui carrega aquela lista automatizada que fizemos com as 3 missões do dia/semana/mês
-    for missao in df_missoes:
-        m_id = missao["ID"]
-        titulo = missao["Titulo"]
-        tipo = missao["Tipo_Missao"]
-        gif = missao["Gif"]
+    if not df_missoes:
+        st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
+        return
+
+    # Percorre a lista gerando um índice numérico (idx) automático para cada botão
+    for idx, missao in enumerate(df_missoes):
+        # Captura os dados tratando possíveis variações de letras maiúsculas/minúsculas
+        titulo = missao.get("Titulo", missao.get("titulo", "Missão Secreta"))
+        tipo = missao.get("Tipo_Missao", missao.get("tipo", "Fácil (Cotidiana)"))
+        gif = missao.get("Gif", missao.get("gif", ""))
         
-        # Define XP por tipo de missão
-        if "Diária" in tipo or "Fácil" in tipo:
+        # Define a recompensa de XP baseada no texto do tipo de missão
+        if "Diária" in str(tipo) or "DIÁRIA" in str(titulo) or "Fácil" in str(tipo):
             xp_ganho = 50
-        elif "Semanal" in tipo or "Média" in tipo:
+        elif "Semanal" in str(tipo) or "SEMANAL" in str(titulo) or "Média" in str(tipo):
             xp_ganho = 150
         else:
             xp_ganho = 500
             
-        ja_feita = m_id in st.session_state["feitas_hoje"]
+        # Usa o índice numérico da linha como o ID único do botão
+        id_unico_missao = f"missao_num_{idx}"
+        ja_feita = id_unico_missao in st.session_state["feitas_hoje"]
         
         st.markdown(f"""
             <div class='card' style='border-left: 5px solid #FFD700; margin-bottom: 20px;'>
-                <span style='float: right; background: #1C2541; padding: 3px 8px; border-radius: 10px; font-size: 12px; color: #FFD700;'>✨ +{xp_ganho} XP</span>
-                <h3>{titulo}</h3>
-                <p><b>Dificuldade:</b> {tipo}</p>
+                <span style='float: right; background: #1C2541; padding: 3px 8px; border-radius: 10px; font-size: 12px; color: #FFD700; font-weight: bold;'>✨ +{xp_ganho} XP</span>
+                <h3 style='margin-top: 0px; color: #FFFFFF;'>{titulo}</h3>
+                <p style='margin-bottom: 0px; color: #E0E1DD;'><b>Dificuldade:</b> {tipo}</p>
             </div>
         """, unsafe_allow_html=True)
         
-        # Exibe o Gif correspondente se ele abrir
-        try:
-            st.image(gif, width=250)
-        except Exception:
-            pass
+        # Mostra o Gif correspondente se ele estiver configurado
+        if gif:
+            try:
+                st.image(gif, width=250)
+            except Exception:
+                pass
             
-        # Botão interativo de conclusão
+        # Sistema de Botão Corrigido usando chaves únicas numéricas
         if ja_feita:
             st.success("✅ Você já concluiu essa missão e coletou o XP!")
         else:
-            if st.button(f"🎯 Concluir Desafio ({xp_ganho} XP)", key=f"btn_{m_id}"):
+            if st.button(f"🎯 Concluir Desafio ({xp_ganho} XP)", key=f"btn_ctrl_{id_unico_missao}"):
                 st.session_state["xp_total"] += xp_ganho
                 st.session_state["missoes_concluidas_count"] += 1
-                st.session_state["feitas_hoje"].append(m_id)
+                st.session_state["feitas_hoje"].append(id_unico_missao)
                 st.balloons()
                 st.success(f"Incrível! Você ganhou {xp_ganho} XP para a sua jornada! ⭐")
                 st.rerun()
                 
+        st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("---")
 def exibir_diario():
     st.title("📸 Nosso Diário de Memórias")
