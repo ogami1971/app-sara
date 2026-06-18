@@ -27,6 +27,7 @@ st.markdown("""
         font-family: 'Georgia', serif; 
         font-size: 2.5rem;
         margin-bottom: 20px;
+        text-shadow: 0px 0px 10px rgba(255, 215, 0, 0.5);
     }
     h2, h4 { 
         color: #FFD700; 
@@ -78,8 +79,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# ID da Planilha do Google Sheets (Substitua pelo seu ID real antes do deploy)
-ID_PLANILHA = "SEU_ID_DA_PLANILHA"
+# ID da Planilha do Google Sheets atualizado com sucesso!
+ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHIeg36F8"
 
 # ==========================================
 # 2. GERENCIAMENTO DE ESTADO (SESSION STATE)
@@ -124,7 +125,7 @@ capa_data, df_elogios, df_missoes = carregar_dados()
 st.sidebar.title("🌌 Menu Interativo")
 tela_selecionada = st.sidebar.radio(
     "Navegue pelo nosso mundo:",
-    ["🌌 Início & Carinho", "🎯 Missões Secretas", "📸 Nosso Diário", "💬 Enviar Carinho"]
+    ["🌌 Início & Carinho", "🎯 Missões Secretas", "📸 Nosso Diário", "⏳ Nossa Linha do Tempo", "💬 Enviar Carinho"]
 )
 st.sidebar.markdown("---")
 st.sidebar.info("Feito com ❤️ por Denner")
@@ -203,7 +204,28 @@ elif tela_selecionada == "📸 Nosso Diário":
     except Exception: 
         st.warning("🌹 Cuidando da nossa rosa animada...")
 
-# --- TELA 4: ENVIAR CARINHO ---
+# --- NOVA TELA 4: NOSSA LINHA DO TEMPO ---
+elif tela_selecionada == "⏳ Nossa Linha do Tempo":
+    st.title("⏳ Nossa Linha do Tempo")
+    st.write("Um espaço para lembrar os momentos em que nossos planetas se cruzaram de forma inesquecível ✨")
+    st.markdown("---")
+    
+    st.markdown("""
+        <div class='card'>
+            <h4>🚀 O Dia que nos Conhecemos</h4>
+            <p style='color: #E0E1DD; font-style: italic;'>O início de uma jornada inteira por esse espaço sideral.</p>
+        </div>
+        <div class='card'>
+            <h4>🔒 O Pedido</h4>
+            <p style='color: #E0E1DD; font-style: italic;'>O instante exato em que decidi cativar e proteger a rosa mais linda do jardim.</p>
+        </div>
+        <div class='card'>
+            <h4>🌌 Próximo Capítulo...</h4>
+            <p style='color: #888888; font-style: italic;'>Ainda estamos escrevendo a nossa história, estrela por estrela.</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+# --- TELA 5: ENVIAR CARINHO (ATUALIZADA COM NOVOS HUMORES) ---
 elif tela_selecionada == "💬 Enviar Carinho":
     st.title("💬 Espaço do Carinho")
     st.write("Como você está se sentindo agora, minha rosa? Escolha uma reação ou escreva uma mensagem para atualizar nosso espaço em tempo real!")
@@ -213,6 +235,8 @@ elif tela_selecionada == "💬 Enviar Carinho":
         "Selecione uma reação...": None,
         "Estou com saudades 🦊": "raposa.gif",
         "Quero dengo / manhosa 🐱": "Gato fazendo mirra.gif",
+        "Quero cafuné e dengo (Preguiça) 🐼": "coberta.gif",  # Usando coberta.gif como fallback caso queira
+        "Pensando em você... 🤔": "raposa.gif",
         "Tô brava com você! 😤": "brava.gif",
         "Te acho um bobo (Deboche) 😜": "deboche.gif",
         "Mostrando a língua para você 👅": "Monstrando a lingua.gif",
