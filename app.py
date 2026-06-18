@@ -78,8 +78,24 @@ tela_selecionada = st.sidebar.radio(
         "💬 Enviar Carinho"
     ]
 )
+st.sidebar.markdown("### 🎵 Trilha Sonora")
+
+# 🌟 Atualizado com o link exato que você enviou!
+id_video_youtube = "pmanD_s7G3U" 
+
+# Cria o player do YouTube em miniatura dentro do menu lateral
+st.sidebar.markdown(
+    f"""
+    <iframe width="100%" height="180" 
+        src="https://www.youtube.com/embed/{id_video_youtube}" 
+        title="YouTube video player" frameborder="0" 
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+        allowfullscreen style="border-radius: 10px; margin-bottom: 10px;">
+    </iframe>
+    """,
+    unsafe_allow_html=True
+)
 st.sidebar.markdown("---")
-st.sidebar.info("Feito com ❤️ por Denner")
 
 # 🛣️ ROTEADOR DIRECIONANDO PARA OS ARQUIVOS SEPARADOS
 if tela_selecionada == "🌌 Início & Carinho":
