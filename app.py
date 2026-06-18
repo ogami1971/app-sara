@@ -3,6 +3,7 @@ import base64
 from estilos import aplicar_estilos
 from dados import carregar_dados
 import telas
+import notificacoes
 
 # 🌟 IMPORT DOS NOSSOS NOVOS MÓDULOS SEPARADOS
 import rpg
