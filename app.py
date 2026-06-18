@@ -121,6 +121,7 @@ tela_selecionada = st.sidebar.radio(
         "🎯 Missões Secretas", 
         "⚔️ Nossa Jornada RPG",
         "🎰 Máquina de Cupons",
+        "🎯 Central de Conquistas", # 🌟 ADICIONADO AQUI!
         "🎲 Roleta de Rolês",    
         "⏳ Tempo Juntos",       
         "💬 Enviar Carinho"
