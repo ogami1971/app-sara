@@ -13,6 +13,9 @@ def exibir_inicio(capa_data, df_elogios):
         frases = [item['Frase'] for item in df_elogios if 'Frase' in item]
         frase_sorteada = random.choice(frases) if frases else "Você é a rosa mais preciosa do meu universo!"
         
+        # 🌟 CORREÇÃO: Salva a frase na memória estável antes do st.rerun() para ela não sumir!
+        st.session_state["ultima_frase_sorteada"] = frase_sorteada
+        
         # Sistema inteligente que lê palavras-chave e chaveia o ID do tema
         frase_minuscula = frase_sorteada.lower()
         if "rosa" in frase_minuscula or "planeta" in frase_minuscula or "essencial" in frase_minuscula or "quatro da tarde" in frase_minuscula or "universo" in frase_minuscula:
@@ -25,10 +28,12 @@ def exibir_inicio(capa_data, df_elogios):
             st.session_state["tema_fundo"] = "arcane"
         
         st.balloons() 
-        st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic; color: #FFFFFF;'>\"{frase_sorteada}\"</div>", unsafe_allow_html=True)
-        
         # Força o Streamlit a redesenhar a tela aplicando o fundo imediatamente na mudança
         st.rerun()
+
+    # Mostra a frase salva na tela (ela vai persistir perfeitamente mesmo após o st.rerun())
+    if "ultima_frase_sorteada" in st.session_state:
+        st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic; color: #FFFFFF;'>\"{st.session_state['ultima_frase_sorteada']}\"</div>", unsafe_allow_html=True)
     else: 
         st.info("Clique no botão acima para receber sua dose diária de amor!")
 
