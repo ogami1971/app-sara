@@ -1,15 +1,14 @@
 import streamlit as st
 import base64
 from estilos import aplicar_estilos
-from dados import carregar_dados
+from dados import carregar_dados, carregar_progresso_banco
 import telas
 import notificacoes
 
-# 🌟 IMPORT DOS NOSSOS NOVOS MÓDULOS SEPARADOS
+# 🌟 IMPORT DOS NOSSOS MÓDULOS SEPARADOS
 import rpg
 import roleta
 import contador
-import streamlit as st
 
 # 🌟 CONFIGURAÇÃO ÚNICA DA PÁGINA (A primeira linha executável do app!)
 st.set_page_config(
@@ -60,33 +59,6 @@ def injetar_wallpaper_dinamico():
             h1 a, h2 a, h3 a {{
                 display: none !important;
             }}
-            
-            /* 🌹 TRANSFORMA O TEXTO BUGADO DO BOTÃO DA SIDEBAR EM UMA ROSA */
-            [data-testid="collapsedControl"] {{
-                font-size: 0px !important;
-                color: transparent !important;
-                width: 40px !important;
-                height: 40px !important;
-            }}
-            
-            [data-testid="collapsedControl"] button,
-            [data-testid="collapsedControl"] button * {{
-                font-size: 0px !important;
-                color: transparent !important;
-                background: transparent !important;
-                border: none !important;
-            }}
-            
-            /* Injeta o emoji da rosa no lugar exato do botão */
-            [data-testid="collapsedControl"]::after {{
-                content: "🌹" !important;
-                font-size: 26px !important;
-                display: block !important;
-                position: absolute !important;
-                top: 10px !important;
-                left: 15px !important;
-                cursor: pointer !important;
-            }}
             </style>
             """,
             unsafe_allow_html=True
@@ -105,7 +77,9 @@ except Exception:
     pass
 injetar_wallpaper_dinamico()
 
+# 🌟 CARREGA DADOS ESTÁTICOS E DA O START NO BANCO DE PROGRESSO DA SARA
 capa_data, df_elogios, df_missoes = carregar_dados()
+carregar_progresso_banco()
 
 # Verifica automaticamente as notificações por e-mail com o Zapier ao abrir o app
 try:
@@ -122,7 +96,7 @@ tela_selecionada = st.sidebar.radio(
         "🎯 Missões Secretas", 
         "⚔️ Nossa Jornada RPG",
         "🎰 Máquina de Cupons",
-        "🎯 Central de Conquistas", # 🌟 ADICIONADO AQUI!
+        "🎯 Central de Conquistas",  # 🌟 Adicionado!
         "🎲 Roleta de Rolês",    
         "⏳ Tempo Juntos",       
         "💬 Enviar Carinho"
@@ -130,7 +104,7 @@ tela_selecionada = st.sidebar.radio(
 )
 st.sidebar.markdown("### 🎵 Trilha Sonora")
 
-# 🌟 Atualizado com o novo vídeo de Your Name!
+# 🌟 Link do YouTube configurado (Your Name Acústico)
 id_video_youtube = "7j60jaMapJ0" 
 
 # Cria o player do YouTube em miniatura dentro do menu lateral
@@ -145,55 +119,9 @@ st.sidebar.markdown(
     """,
     unsafe_allow_html=True
 )
-import streamlit as st
-import pandas as pd
-# Nota: Estou assumindo que você usa a integração nativa do Streamlit com Google Sheets (st.connection)
-# Se você usa outra biblioteca (como gspread), a lógica de salvar o dataframe será parecida.
-
-def carregar_progresso_banco():
-    """Lê o progresso salvo na planilha do Google Sheets."""
-    try:
-        # Puxa a conexão que você já configurou no seu app
-        conn = st.connection("gsheets", type=st.connections.SQLConnection) # ou seu formato de conn existente
-        df = conn.read(worksheet="Progresso", ttl=0) # ttl=0 garante que lê o dado mais recente sem cache
-        
-        # Salva no estado do app para uso rápido
-        st.session_state["xp_atual"] = int(df.iloc[0]["XP"])
-        st.session_state["nivel_atual"] = int(df.iloc[0]["Nivel"])
-        
-        # Converte as strings guardadas de volta em listas
-        st.session_state["cupons_usados_ids"] = str(df.iloc[0]["Cupons_Usados"]).split(",") if pd.notna(df.iloc[0]["Cupons_Usados"]) else []
-        st.session_state["conquistas_ids"] = str(df.iloc[0]["Conquistas_Desbloqueadas"]).split(",") if pd.notna(df.iloc[0]["Conquistas_Desbloqueadas"]) else []
-    except Exception as e:
-        # Caso falte internet ou dê erro, carrega valores zerados para o app não cair
-        if "xp_atual" not in st.session_state: st.session_state["xp_atual"] = 0
-        if "nivel_atual" not in st.session_state: st.session_state["nivel_atual"] = 1
-        if "cupons_usados_ids" not in st.session_state: st.session_state["cupons_usados_ids"] = []
-        if "conquistas_ids" not in st.session_state: st.session_state["conquistas_ids"] = []
-
-def salvar_progresso_banco():
-    """Sobrescreve a linha de progresso na planilha com os dados atuais do app."""
-    try:
-        # Junta as listas internas em texto separado por vírgula para caber na célula da planilha
-        cupons_str = ",".join(map(str, st.session_state.get("cupons_usados_ids", [])))
-        conquistas_str = ",".join(map(str, st.session_state.get("conquistas_ids", [])))
-        
-        # Cria um novo DataFrame com os dados atualizados
-        dados_atualizados = pd.DataFrame([{
-            "XP": st.session_state.get("xp_atual", 0),
-            "Nivel": st.session_state.get("nivel_atual", 1),
-            "Cupons_Usados": cupons_str,
-            "Conquistas_Desbloqueadas": conquistas_str
-        }])
-        
-        # Envia de volta para a planilha na aba "Progresso"
-        conn = st.connection("gsheets", type=st.connections.SQLConnection)
-        conn.update(worksheet="Progresso", data=dados_atualizados)
-    except Exception as e:
-        pass
 st.sidebar.markdown("---")
 
-# 🛣️ ROTEADOR DIRECIONANDO PARA OS ARQUIVOS SEPARADOS
+# 🛣️ ROTEADOR DIRECIONANDO PARA AS TELAS CORRETAS
 if tela_selecionada == "🌌 Início & Carinho":
     telas.exibir_inicio(capa_data, df_elogios)
 elif tela_selecionada == "🎯 Missões Secretas":
@@ -202,15 +130,11 @@ elif tela_selecionada == "⚔️ Nossa Jornada RPG":
     rpg.exibir_rpg()
 elif tela_selecionada == "🎰 Máquina de Cupons":
     telas.exibir_maquina_cupons()
+elif tela_selecionada == "🎯 Central de Conquistas":
+    telas.exibir_central_conquistas()
 elif tela_selecionada == "🎰 Roleta de Rolês":
     roleta.exibir_roleta()
 elif tela_selecionada == "⏳ Tempo Juntos":
     contador.exibir_contador()
-elif tela_selecionada == "📸 Nosso Diário":
-    telas.exibir_diario()
-elif tela_selecionada == "⏳ Nossa Linha do Tempo":
-    telas.exibir_linha_tempo()
 elif tela_selecionada == "💬 Enviar Carinho":
     telas.exibir_enviar_carinho()
-elif tela_selecionada == "🎯 Central de Conquistas":
-    telas.exibir_central_conquistas()
