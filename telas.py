@@ -3,18 +3,32 @@ import random
 from datetime import datetime
 
 def exibir_inicio(capa_data, df_elogios):
-    # REMOVIDO: O st.image("capa.jpg") que ficava centralizado e atrapalhando o fundo!
-        
     st.title(f"✨ {capa_data.get('Titulo_App', 'Nosso Universo')} ✨")
     st.markdown(f"<h3>{capa_data.get('Subtitulo_App', 'Bem-vinda')}</h3>", unsafe_allow_html=True)
     st.markdown("---")
     
     st.subheader("❤️ Um carinho para o seu dia")
+    
     if st.button("✨ Quer um carinho? (Clique aqui) ✨"):
         frases = [item['Frase'] for item in df_elogios if 'Frase' in item]
         frase_sorteada = random.choice(frases) if frases else "Você é a rosa mais preciosa do meu universo!"
+        
+        # Sistema inteligente que lê palavras-chave e chaveia o ID do tema
+        frase_minuscula = frase_sorteada.lower()
+        if "rosa" in frase_minuscula or "planeta" in frase_minuscula or "essencial" in frase_minuscula or "quatro da tarde" in frase_minuscula or "universo" in frase_minuscula:
+            st.session_state["tema_fundo"] = "pequeno_principe"
+        elif "kaori" in frase_minuscula or "violino" in frase_minuscula or "melodia" in frase_minuscula or "sinfonia" in frase_minuscula or "primavera" in frase_minuscula or "música" in frase_minuscula:
+            st.session_state["tema_fundo"] = "shigatsu"
+        elif "respiração" in frase_minuscula or "luas" in frase_minuscula or "tanjiro" in frase_minuscula or "rengoku" in frase_minuscula or "espada" in frase_minuscula or "borboleta" in frase_minuscula:
+            st.session_state["tema_fundo"] = "demon_slayer"
+        elif "zaun" in frase_minuscula or "piltover" in frase_minuscula or "hextec" in frase_minuscula or "perfeita exatamente" in frase_minuscula or "faísca" in frase_minuscula:
+            st.session_state["tema_fundo"] = "arcane"
+        
         st.balloons() 
-        st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic;'>\"{frase_sorteada}\"</div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic; color: #FFFFFF;'>\"{frase_sorteada}\"</div>", unsafe_allow_html=True)
+        
+        # Força o Streamlit a redesenhar a tela aplicando o fundo imediatamente na mudança
+        st.rerun()
     else: 
         st.info("Clique no botão acima para receber sua dose diária de amor!")
 
@@ -114,7 +128,7 @@ def exibir_enviar_carinho():
                 "hora": agora,
                 "reacao_texto": reacao_escolhida if reacao_escolhida != "Selecione uma reação..." else None,
                 "gif": opcoes_reacoes[reacao_escolhida] if reacao_escolhida != "Selecione uma reação..." else None,
-                "mensagem": message_personalizada.strip() if mensagem_personalizada.strip() != "" else None
+                "mensagem": mensagem_personalizada.strip() if mensagem_personalizada.strip() != "" else None
             }
             st.session_state["historico_carinhos"].insert(0, novo_carinho)
             st.toast("Carinho enviado com sucesso! ✨", icon="❤️")
