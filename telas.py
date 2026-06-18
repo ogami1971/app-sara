@@ -141,21 +141,39 @@ def exibir_linha_tempo():
     """, unsafe_allow_html=True)
 
 def exibir_enviar_carinho():
-    st.title("💬 Espaço do Carinho")
-    st.write("Como você está se sentindo agora, minha rosa? Escolha uma reação ou escreva uma mensagem!")
+    st.title("💬 Enviar um Carinho Especial")
+    st.write("Escreva algo lindo para a Sara. A mensagem vai para o mural do app e direto para o e-mail dela!")
     st.markdown("---")
     
-    opcoes_reacoes = {
-        "Selecione uma reação...": None,
-        "Estou com saudades 🦊": "raposa.gif",
-        "Quero dengo / manhosa 🐱": "Gato fazendo mirra.gif",
-        "Quero cafuné e dengo (Preguiça) 🐼": "coberta.gif",
-        "Pensando em você... 🤔": "raposa.gif",
-        "Tô brava com você! 😤": "brava.gif",
-        "Te acho um bobo (Deboche) 😜": "deboche.gif",
-        "Mostrando a língua para você 👅": "Monstrando a lingua.gif",
-        "Estou com fome! 🍕": "comida.gif",
-        "Quero coberta e cafuné 🛌": "coberta.gif"
+    with st.form("form_carinho", clear_on_submit=True):
+        texto_carinho = st.text_area("O que você quer dizer para a sua rosa hoje?")
+        tipo_carinho = st.selectbox("Escolha o tom do carinho:", ["Romântico 🌹", "Engraçado 🍿", "Apoio/Motivação ✨"])
+        
+        botao_enviar = st.form_submit_button("🚀 Enviar Carinho ao Universo")
+        
+        if botao_enviar and texto_carinho:
+            # 1. (Aqui fica o seu código atual que salva no arquivo dados.py ou planilha principal)
+            # ... [Seu código atual de salvar carinho] ...
+            
+            # 2. GATILHO PARA O EMAIL (Via Zapier):
+            # Vamos estruturar a linha exatamente como o Zapier vai ler na aba 'Notificacoes'
+            try:
+                import pandas as pd
+                from datetime import datetime
+                
+                # Criamos a mensagem formatada que ela vai ler no e-mail
+                mensagem_email = f"Oi Sara! O Denner te enviou um carinho {tipo_carinho} pelo app:\n\n\"{texto_carinho}\"\n\nCom amor, seu Pequeno Príncipe. 🪐"
+                
+                # Puxamos o arquivo que gerencia a planilha para injetar na aba 'Notificacoes'
+                # Se você usa o st.session_state ou gspread, basta adicionar uma nova linha na aba 'Notificacoes'
+                # Exemplo simulado por webhook ou append simples:
+                import notificacoes
+                notificacoes.disparar_notificacao_planilha(mensagem_email)
+                
+                st.balloons()
+                st.success("✨ Carinho enviado para o mural e a caminho do e-mail dela!")
+            except Exception as e:
+                st.error("O carinho foi para o mural, mas houve um problema ao agendar o e-mail.")
     }
     
     reacao_escolhida = st.selectbox("Como está seu humor hoje?", list(opcoes_reacoes.keys()))
