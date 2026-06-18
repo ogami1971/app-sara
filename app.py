@@ -13,6 +13,7 @@ def injetar_wallpaper_local(caminho_imagem):
         st.markdown(
             f"""
             <style>
+            /* Aplica o wallpaper de estrelas no fundo de toda a página */
             [data-testid="stAppViewContainer"] {{
                 background-image: url("data:image/jpg;base64,{imagem_base64}");
                 background-size: cover !important;
@@ -20,23 +21,23 @@ def injetar_wallpaper_local(caminho_imagem):
                 background-repeat: no-repeat !important;
                 background-attachment: fixed !important;
             }}
-            /* Torna o fundo do conteúdo ligeiramente transparente para mostrar o wallpaper nas laterais */
+            /* Torna o bloco do meio levemente transparente para o fundo aparecer nas laterais */
             .main {{
-                background-color: rgba(11, 19, 43, 0.8) !important;
+                background-color: rgba(11, 13, 28, 0.75) !important; /* Azul escuro translúcido */
                 color: #FFFFFF !important;
                 padding: 30px !important;
                 border-radius: 20px !important;
+                box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.5);
             }}
-            /* Deixa a barra lateral combinando */
+            /* Deixa a barra lateral também combinando com transparência */
             [data-testid="stSidebar"] {{
-                background-color: rgba(11, 19, 43, 0.9) !important;
+                background-color: rgba(11, 13, 28, 0.85) !important;
             }}
             </style>
             """,
             unsafe_allow_html=True
         )
     except Exception:
-        # Caso a imagem falhe por algum motivo, não trava o app
         pass
 
 # 1. Configuração da Página
@@ -50,8 +51,8 @@ st.set_page_config(
 # 2. Aplicar os Estilos Gerais do arquivo estilos.py
 aplicar_estilos()
 
-# 3. Injetar o Wallpaper de Fundo usando o arquivo correto do seu GitHub
-injetar_wallpaper_local("Wallpaper.jpg")
+# 3. Injetar capa.jpg como o plano de fundo do universo inteiro!
+injetar_wallpaper_local("capa.jpg")
 
 # 4. Inicializar Session State
 if "historico_carinhos" not in st.session_state:
