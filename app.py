@@ -35,6 +35,7 @@ def injetar_wallpaper_dinamico():
         st.markdown(
             f"""
             <style>
+            /* Injeta o Wallpaper de Fundo */
             .stAppViewMain, [data-testid="stAppViewContainer"], .stApp {{
                 background-image: url("data:image/jpg;base64,{imagem_base64}") !important;
                 background-size: cover !important;
@@ -46,6 +47,21 @@ def injetar_wallpaper_dinamico():
             [data-testid="stApp"] {{ background: transparent !important; }}
             [data-testid="stSidebar"], [data-testid="stSidebarUserContent"] {{
                 background-color: rgba(20, 27, 48, 0.9) !important;
+            }}
+            
+            /* 🌟 ENGENHARIA DISFARÇADA: Esconde o bloco de texto bugado do topo */
+            [data-testid="stHeader"] {{
+                background-color: transparent !important;
+            }}
+            [data-testid="stHeader"]::before {{
+                content: "" !important;
+                display: none !important;
+            }}
+            h1 a, h2 a, h3 a {{
+                display: none !important;
+            }}
+            .st-emotion-cache-zt5gjg {{
+                display: none !important;
             }}
             </style>
             """,
