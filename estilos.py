@@ -6,8 +6,8 @@ def aplicar_estilos():
         /* Importa uma fonte de altíssima legibilidade e traços limpos estilo minimalista asiático */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
 
-        /* Aplica a tipografia limpa em todo o app */
-        html, body, [class*="css"], .main, p, span {
+        /* Aplica a tipografia limpa sem quebrar as classes nativas do Streamlit */
+        html, body, .main, p, .stMarkdown {
             font-family: 'Inter', sans-serif !important;
         }
 
@@ -99,6 +99,17 @@ def aplicar_estilos():
         .stSelectbox div[data-baseweb="select"] {
             background-color: #1C2541 !important;
             color: white !important;
+        }
+
+        /* 🎯 APAGA O TEXTO BUGADO DO MENU DE FORMA DEFINITIVA */
+        [data-testid="collapsedControl"], 
+        [data-testid="collapsedControl"] button,
+        [data-testid="collapsedControl"] button * {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            width: 0px !important;
+            height: 0px !important;
         }
         </style>
     """, unsafe_allow_html=True)
