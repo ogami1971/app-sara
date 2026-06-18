@@ -213,3 +213,59 @@ def exibir_maquina_cupons():
                         st.balloons()
                         st.success(f"Cupom '{cupom['titulo']}' resgatado com sucesso! O Denner foi notificado.")
                         st.rerun() # Recarrega a página para atualizar o status do botão
+def exibir_central_conquistas():
+    import dados
+    import streamlit as st
+    
+    st.title("🎯 Central de Conquistas da Sara")
+    st.write("Acompanhe suas medalhas colecionáveis! Elas são desbloqueadas conforme você interage com o nosso universo.")
+    st.markdown("---")
+    
+    # Carrega as conquistas validadas em tempo real
+    conquistas = dados.carregar_conquistas()
+    
+    # Exibe as medalhas em um grid organizado (3 por linha)
+    cols = st.columns(3)
+    
+    for i, conquista in enumerate(conquistas):
+        col_atual = cols[i % 3] # Distribui entre as 3 colunas dinamicamente
+        
+        with col_atual:
+            if conquista["desbloqueada"]:
+                # Medalha Desbloqueada: Colorida, brilhante e dourada
+                st.markdown(
+                    f"""
+                    <div style="background-color: rgba(255, 215, 0, 0.15); 
+                                border: 2px solid #FFD700; 
+                                padding: 20px; 
+                                border-radius: 15px; 
+                                text-align: center; 
+                                margin-bottom: 20px;
+                                box-shadow: 0px 4px 15px rgba(255, 215, 0, 0.3);">
+                        <div style="font-size: 50px; margin-bottom: 10px;">{conquista['icone']}</div>
+                        <h4 style="color: #FFD700 !important; margin: 0;">{conquista['titulo']}</h4>
+                        <p style="color: #fff; font-size: 13px; margin-top: 5px;">{conquista['descricao']}</p>
+                        <span style="background-color: #2e7d32; color: white; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: bold;">🔓 CONQUISTADO</span>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
+            else:
+                # Medalha Bloqueada: Cinza, opaca e discreta
+                st.markdown(
+                    f"""
+                    <div style="background-color: rgba(40, 40, 50, 0.3); 
+                                border: 2px dashed #555; 
+                                padding: 20px; 
+                                border-radius: 15px; 
+                                text-align: center; 
+                                margin-bottom: 20px;
+                                opacity: 0.5;">
+                        <div style="font-size: 50px; margin-bottom: 10px; filter: grayscale(100%);">🔒</div>
+                        <h4 style="color: #888 !important; margin: 0;">Bloqueada</h4>
+                        <p style="color: #aaa; font-size: 13px; margin-top: 5px;">{conquista['descricao']}</p>
+                        <span style="background-color: #37474f; color: #aaa; padding: 3px 10px; border-radius: 10px; font-size: 11px;">🔒 BLOQUEADO</span>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
