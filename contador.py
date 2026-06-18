@@ -8,7 +8,7 @@ def exibir_contador():
     
     # 🌟 CONFIGURAÇÃO: Altere aqui para a data e hora exata em que começaram a namorar!
     # Formato: datetime(ANO, MÊS, DIA, HORA, MINUTO)
-    data_inicio = datetime(2025, 6, 12, 20, 0) 
+    data_inicio = datetime(2025, 1, 18, 20, 0) 
     agora = datetime.now()
     
     diferenca = agora - data_inicio
