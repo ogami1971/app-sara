@@ -5,17 +5,21 @@ import os
 
 def carregar_dados():
     """
-    Sua função original de carregar dados das planilhas.
-    Apenas mantida aqui para integridade do seu ecossistema.
+    Carrega as informações do ecossistema de planilhas.
+    Certifique-se de que a conexão ou leitura real da sua planilha 
+    esteja apontando para as abas certas!
     """
-    # Exemplo genérico simulando o retorno dos seus DataFrames originais
-    capa_data = {"titulo": "Nosso Universo"}
-    df_elogios = pd.DataFrame()
-    df_missoes = pd.DataFrame()
+    # Exemplo de estrutura estruturada. Substitua pela sua chamada real do gsheets se necessário.
+    capa_data = {"Titulo_App": "App Pequeno Príncipe - Sara", "Subtitulo_App": "Bem-vinda ao nosso universo!"}
+    
+    # Mocks vazios seguros para caso a planilha falhe na leitura inicial
+    df_elogios = [] 
+    df_missoes = pd.DataFrame(columns=["ID_Missao", "Missao", "Concluida", "Tipo_Missao"])
+    
     return capa_data, df_elogios, df_missoes
 
 # ------------------------------------------------------------------
-# 🎰 NOVO SISTEMA DE BANCO DE DADOS PERSISTENTE (JSON)
+# 🎰 SISTEMA DE BANCO DE DADOS PERSISTENTE (JSON)
 # ------------------------------------------------------------------
 
 ARQUIVO_BANCO = "progresso_sara.json"
@@ -44,13 +48,13 @@ def carregar_progresso_banco():
     
     try:
         with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
-            dados = json.load(f)
+            dados_carregados = json.load(f)
             
         # Transfere os dados salvos para a memória do app
-        st.session_state["xp_atual"] = dados.get("xp", 0)
-        st.session_state["nivel_atual"] = dados.get("nivel", 1)
-        st.session_state["cupons_usados_ids"] = dados.get("cupons_usados", [])
-        st.session_state["conquistas_ids"] = dados.get("conquistas_desbloqueadas", ["primeiro_passo"])
+        st.session_state["xp_atual"] = dados_carregados.get("xp", 0)
+        st.session_state["nivel_atual"] = dados_carregados.get("nivel", 1)
+        st.session_state["cupons_usados_ids"] = dados_carregados.get("cupons_usados", [])
+        st.session_state["conquistas_ids"] = dados_carregados.get("conquistas_desbloqueadas", ["primeiro_passo"])
     except Exception:
         # Fallback de segurança para o app nunca quebrar
         if "xp_atual" not in st.session_state: st.session_state["xp_atual"] = 0
@@ -91,7 +95,7 @@ def carregar_cupons():
     cupons_base = [
         {"id": 1, "titulo": "Vale 1 Massagem de 30 min 💆‍♀️", "descricao": "Direito a óleo perfumado e música calma."},
         {"id": 2, "titulo": "Vale 1 Jantar Especial 🍝", "descricao": "Pago e escolhido inteiramente pelo Denner."},
-        {"id": 3, "titulo": "Vale Cinema em Casa 🍿", "descricao": "Você escolhe o filme e eu faço a pipoca (sem reclamar!)."},
+        {"id": 3, "titulo": "Vale Cinema em Casa 🍿", "descricao": "Você escolher o filme e eu faço a pipoca (sem reclamar!)."},
         {"id": 4, "titulo": "Vale Rodada de Cafuné Unlimited 🧸", "descricao": "Válido até você ou eu dormirmos."},
         {"id": 5, "titulo": "Vale Sair para comer Doce 🍰", "descricao": "Uma caçada aos melhores doces da Asa Norte."},
     ]
@@ -163,5 +167,5 @@ def adicionar_xp(quantidade):
         st.session_state["nivel_atual"] += 1
         st.toast(f"🎉 PARABÉNS! Você subiu para o Nível {st.session_state['nivel_atual']}!", icon="⭐")
         
-    # 🌟 ISSO DAQUI NÃO PODE FALTAR: Salva fisicamente o novo XP no JSON!
+    # Salva fisicamente o novo XP no JSON!
     salvar_progresso_banco()
