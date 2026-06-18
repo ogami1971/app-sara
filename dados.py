@@ -2,6 +2,23 @@ import streamlit as st
 import csv
 import urllib.request
 from datetime import datetime
+import streamlit as st
+
+def carregar_cupons():
+    """
+    Inicializa e carrega a lista de cupons de casal no st.session_state
+    para persistir se já foram usados ou não durante o uso do app.
+    """
+    if "lista_cupons" not in st.session_state:
+        # Lista inicial de cupons. Você pode mudar os nomes e ícones como quiser!
+        st.session_state["lista_cupons"] = [
+            {"id": 1, "titulo": "Vale 1 Massagem de 30 min 💆‍♀️", "descricao": "Direito a óleo perfumado e música calma.", "usado": False},
+            {"id": 2, "titulo": "Vale 1 Jantar Especial 🍝", "descricao": "Pago e escolhido inteiramente pelo Denner.", "usado": False},
+            {"id": 3, "titulo": "Vale Cinema em Casa 🍿", "descricao": "Você escolhe o filme e eu faço a pipoca (sem reclamar!).", "usado": False},
+            {"id": 4, "titulo": "Vale Rodada de Cafuné Unlimited 🧸", "descricao": "Válido até você ou eu dormirmos.", "usado": False},
+            {"id": 5, "titulo": "Vale Sair para comer Doce 🍰", "descricao": "Uma caçada aos melhores doces da Asa Norte.", "usado": False},
+        ]
+    return st.session_state["lista_cupons"]
 
 ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHIeg36F8"
 
