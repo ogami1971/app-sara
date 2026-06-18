@@ -4,41 +4,40 @@ from estilos import aplicar_estilos
 from dados import carregar_dados
 import telas
 
-# Função inteligente para injetar a imagem local no plano de fundo (Base64)
-def injetar_wallpaper_local(caminho_imagem):
+# Função com seletor absoluto que transforma a imagem local em wallpaper real
+def injetar_wallpaper_completo(caminho_imagem):
     try:
         with open(caminho_imagem, "rb") as arquivo:
             dados_imagem = arquivo.read()
         imagem_base64 = base64.b64encode(dados_imagem).decode()
+        
         st.markdown(
             f"""
             <style>
-            /* Aplica o wallpaper de estrelas no fundo de toda a página */
-            [data-testid="stAppViewContainer"] {{
-                background-image: url("data:image/jpg;base64,{imagem_base64}");
+            /* Alvo absoluto no painel principal e contêiner global */
+            .stAppViewMain, [data-testid="stAppViewContainer"], .stApp {{
+                background-image: url("data:image/jpg;base64,{imagem_base64}") !important;
                 background-size: cover !important;
-                background-position: center !important;
+                background-position: center center !important;
                 background-repeat: no-repeat !important;
                 background-attachment: fixed !important;
             }}
-            /* Torna o bloco do meio levemente transparente para o fundo aparecer nas laterais */
-            .main {{
-                background-color: rgba(11, 13, 28, 0.75) !important; /* Azul escuro translúcido */
-                color: #FFFFFF !important;
-                padding: 30px !important;
-                border-radius: 20px !important;
-                box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.5);
+            
+            /* Limpa obstruções visuais secundárias */
+            [data-testid="stApp"] {{
+                background: transparent !important;
             }}
-            /* Deixa a barra lateral também combinando com transparência */
-            [data-testid="stSidebar"] {{
-                background-color: rgba(11, 13, 28, 0.85) !important;
+
+            /* Customiza a barra lateral para ficar em sintonia */
+            [data-testid="stSidebar"], [data-testid="stSidebarUserContent"] {{
+                background-color: rgba(20, 27, 48, 0.9) !important;
             }}
             </style>
             """,
             unsafe_allow_html=True
         )
-    except Exception:
-        pass
+    except Exception as e:
+        st.error(f"Erro ao carregar o fundo: {e}")
 
 # 1. Configuração da Página
 st.set_page_config(
@@ -48,11 +47,14 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# 2. Aplicar os Estilos Gerais do arquivo estilos.py
-aplicar_estilos()
+# 2. Aplicar os Estilos Gerais
+try:
+    aplicar_estilos()
+except Exception:
+    pass
 
-# 3. Injetar capa.jpg como o plano de fundo do universo inteiro!
-injetar_wallpaper_local("capa.jpg")
+# 3. Forçar a injeção do Wallpaper.jpg de ponta a ponta na tela
+injetar_wallpaper_completo("Wallpaper.jpg")
 
 # 4. Inicializar Session State
 if "historico_carinhos" not in st.session_state:
