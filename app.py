@@ -165,3 +165,5 @@ elif tela_selecionada == "⏳ Nossa Linha do Tempo":
     telas.exibir_linha_tempo()
 elif tela_selecionada == "💬 Enviar Carinho":
     telas.exibir_enviar_carinho()
+elif tela_selecionada == "🎯 Central de Conquistas":
+    telas.exibir_central_conquistas()
