@@ -165,3 +165,51 @@ def exibir_enviar_carinho():
                 st.success("✨ Carinho enviado para o mural e a caminho do e-mail dela!")
             else:
                 st.warning("O carinho foi enviado, mas o Zapier não respondeu. Verifique o link no arquivo notificacoes.py!")
+
+def exibir_maquina_cupons():
+    import dados
+    import notificacoes
+    
+    st.title("🎰 Máquina de Cupons Românticos")
+    st.write("Escolha um cupom especial e resgate-o na vida real! O Denner receberá um aviso instantâneo.")
+    st.markdown("---")
+    
+    # Carrega os cupons salvos
+    cupons = dados.carregar_cupons()
+    
+    # Exibe os cupons em um layout de colunas para parecer um mural de vouchers
+    for cupom in cupons:
+        # Criamos uma caixinha visual (container) para cada cupom
+        with st.container(border=True):
+            col_texto, col_botao = st.columns([3, 1])
+            
+            with col_texto:
+                if cupom["usado"]:
+                    st.markdown(f"~~### {cupom['titulo']}~~")
+                    st.caption("🔴 *Este cupom já foi utilizado!*")
+                else:
+                    st.markdown(f"### {cupom['titulo']}")
+                    st.write(cupom["descricao"])
+            
+            with col_botao:
+                st.write("") # Apenas para centralizar verticalmente o botão
+                if cupom["usado"]:
+                    st.button("Utilizado", key=f"btn_{cupom['id']}", disabled=True)
+                else:
+                    # Botão para resgatar
+                    botao_resgatar = st.button("🎟️ Resgatar", key=f"btn_{cupom['id']}", type="primary")
+                    
+                    if botao_resgatar:
+                        # 1. Marca o cupom como usado no sistema
+                        cupom["usado"] = True
+                        
+                        # 2. Prepara a mensagem para enviar para VOCÊ (Denner) via Zapier
+                        mensagem_notificacao = f"🚨 ALERTA DE RESGATE! 🚨\n\nA Sara acabou de resgatar um cupom no app do casal:\n\n🎟️ Cupom: {cupom['titulo']}\n📋 Detalhes: {cupom['descricao']}\n\nPrepare-se para cumprir a sua promessa! 😉"
+                        
+                        # 3. Dispara pro Zapier enviar pro seu e-mail
+                        notificacoes.disparar_notificacao_planilha(mensagem_notificacao)
+                        
+                        # 4. Atualiza a tela com efeito visual de sucesso
+                        st.balloons()
+                        st.success(f"Cupom '{cupom['titulo']}' resgatado com sucesso! O Denner foi notificado.")
+                        st.rerun() # Recarrega a página para atualizar o status do botão
