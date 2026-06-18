@@ -144,6 +144,52 @@ st.sidebar.markdown(
     """,
     unsafe_allow_html=True
 )
+import streamlit as st
+import pandas as pd
+# Nota: Estou assumindo que você usa a integração nativa do Streamlit com Google Sheets (st.connection)
+# Se você usa outra biblioteca (como gspread), a lógica de salvar o dataframe será parecida.
+
+def carregar_progresso_banco():
+    """Lê o progresso salvo na planilha do Google Sheets."""
+    try:
+        # Puxa a conexão que você já configurou no seu app
+        conn = st.connection("gsheets", type=st.connections.SQLConnection) # ou seu formato de conn existente
+        df = conn.read(worksheet="Progresso", ttl=0) # ttl=0 garante que lê o dado mais recente sem cache
+        
+        # Salva no estado do app para uso rápido
+        st.session_state["xp_atual"] = int(df.iloc[0]["XP"])
+        st.session_state["nivel_atual"] = int(df.iloc[0]["Nivel"])
+        
+        # Converte as strings guardadas de volta em listas
+        st.session_state["cupons_usados_ids"] = str(df.iloc[0]["Cupons_Usados"]).split(",") if pd.notna(df.iloc[0]["Cupons_Usados"]) else []
+        st.session_state["conquistas_ids"] = str(df.iloc[0]["Conquistas_Desbloqueadas"]).split(",") if pd.notna(df.iloc[0]["Conquistas_Desbloqueadas"]) else []
+    except Exception as e:
+        # Caso falte internet ou dê erro, carrega valores zerados para o app não cair
+        if "xp_atual" not in st.session_state: st.session_state["xp_atual"] = 0
+        if "nivel_atual" not in st.session_state: st.session_state["nivel_atual"] = 1
+        if "cupons_usados_ids" not in st.session_state: st.session_state["cupons_usados_ids"] = []
+        if "conquistas_ids" not in st.session_state: st.session_state["conquistas_ids"] = []
+
+def salvar_progresso_banco():
+    """Sobrescreve a linha de progresso na planilha com os dados atuais do app."""
+    try:
+        # Junta as listas internas em texto separado por vírgula para caber na célula da planilha
+        cupons_str = ",".join(map(str, st.session_state.get("cupons_usados_ids", [])))
+        conquistas_str = ",".join(map(str, st.session_state.get("conquistas_ids", [])))
+        
+        # Cria um novo DataFrame com os dados atualizados
+        dados_atualizados = pd.DataFrame([{
+            "XP": st.session_state.get("xp_atual", 0),
+            "Nivel": st.session_state.get("nivel_atual", 1),
+            "Cupons_Usados": cupons_str,
+            "Conquistas_Desbloqueadas": conquistas_str
+        }])
+        
+        # Envia de volta para a planilha na aba "Progresso"
+        conn = st.connection("gsheets", type=st.connections.SQLConnection)
+        conn.update(worksheet="Progresso", data=dados_atualizados)
+    except Exception as e:
+        pass
 st.sidebar.markdown("---")
 
 # 🛣️ ROTEADOR DIRECIONANDO PARA OS ARQUIVOS SEPARADOS
