@@ -10,6 +10,12 @@ import rpg
 import roleta
 import contador
 
+# 🌟 ISSO DEVE SER A PRIMEIRA LINHA EXECUTÁVEL DO SEU APP.PY:
+st.set_page_config(
+    page_title="Universo de Amor", 
+    page_icon="🌹", 
+    layout="wide"
+)
 def injetar_wallpaper_dinamico():
     temas_arquivos = {
         "pequeno_principe": "Wallpaper.jpg",       
