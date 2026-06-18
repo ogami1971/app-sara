@@ -152,10 +152,6 @@ def carregar_conquistas():
     return conquistas
 
 def adicionar_xp(quantidade):
-    """
-    Função utilitária: Adiciona XP à Sara, calcula se ela subiu de nível 
-    (100 XP por nível) e salva tudo imediatamente no banco de dados.
-    """
     if "xp_atual" not in st.session_state:
         carregar_progresso_banco()
         
@@ -167,4 +163,5 @@ def adicionar_xp(quantidade):
         st.session_state["nivel_atual"] += 1
         st.toast(f"🎉 PARABÉNS! Você subiu para o Nível {st.session_state['nivel_atual']}!", icon="⭐")
         
+    # 🌟 ISSO DAQUI NÃO PODE FALTAR: Salva fisicamente o novo XP no JSON!
     salvar_progresso_banco()
