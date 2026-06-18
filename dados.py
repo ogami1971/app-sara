@@ -5,16 +5,37 @@ import os
 
 def carregar_dados():
     """
-    Carrega as informações do ecossistema de planilhas.
-    Certifique-se de que a conexão ou leitura real da sua planilha 
-    esteja apontando para as abas certas!
+    Conecta diretamente com a sua planilha do Google Sheets e puxa os dados reais
+    das abas 'Capa_app', 'Banco_De_Elogios' e 'Missoes_Romanticas'.
     """
-    # Exemplo de estrutura estruturada. Substitua pela sua chamada real do gsheets se necessário.
-    capa_data = {"Titulo_App": "App Pequeno Príncipe - Sara", "Subtitulo_App": "Bem-vinda ao nosso universo!"}
+    ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHleg36F8"
     
-    # Mocks vazios seguros para caso a planilha falhe na leitura inicial
-    df_elogios = [] 
-    df_missoes = pd.DataFrame(columns=["ID_Missao", "Missao", "Concluida", "Tipo_Missao"])
+    url_capa = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Capa_app"
+    url_elogios = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Banco_De_Elogios"
+    url_missoes = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Missoes_Romanticas"
+    
+    try:
+        df_capa = pd.read_csv(url_capa)
+        if not df_capa.empty:
+            capa_data = df_capa.iloc[0].to_dict()
+        else:
+            capa_data = {"Titulo_App": "App Pequeno Príncipe - Sara", "Subtitulo_App": "Bem-vinda ao nosso universo!"}
+    except Exception:
+        capa_data = {"Titulo_App": "App Pequeno Príncipe - Sara", "Subtitulo_App": "Bem-vinda ao nosso universo!"}
+        
+    try:
+        df_elogios_raw = pd.read_csv(url_elogios)
+        df_elogios = df_elogios_raw.to_dict(orient="records")
+    except Exception:
+        df_elogios = []
+
+    try:
+        # 🎯 Carrega as missões diretamente da aba 'Missoes_Romanticas'
+        df_missoes = pd.read_csv(url_missoes)
+    except Exception as e:
+        # Caso ocorra falha na conexão (ex: planilha privada), cria um DataFrame estruturado vazio
+        st.error("Aviso: Não foi possível ler a planilha. Verifique se o link está público (Qualquer pessoa com o link pode ler).")
+        df_missoes = pd.DataFrame(columns=["ID_Missao", "Missao", "Concluida", "Tipo_Missao"])
     
     return capa_data, df_elogios, df_missoes
 
@@ -25,47 +46,34 @@ def carregar_dados():
 ARQUIVO_BANCO = "progresso_sara.json"
 
 def inicializar_banco_local():
-    """
-    Cria o arquivo de banco de dados com os valores zerados/iniciais 
-    caso ele ainda não exista no servidor.
-    """
     if not os.path.exists(ARQUIVO_BANCO):
         dados_iniciais = {
             "xp": 0,
             "nivel": 1,
             "cupons_usados": [],
-            "conquistas_desbloqueadas": ["primeiro_passo"] # Ganha de brinde ao entrar
+            "conquistas_desbloqueadas": ["primeiro_passo"]
         }
         with open(ARQUIVO_BANCO, "w", encoding="utf-8") as f:
             json.dump(dados_iniciais, f, indent=4, ensure_ascii=False)
 
 def carregar_progresso_banco():
-    """
-    Carrega os dados do arquivo JSON para o st.session_state do Streamlit.
-    Roda uma vez logo quando o aplicativo é aberto.
-    """
     inicializar_banco_local()
     
     try:
         with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
             dados_carregados = json.load(f)
             
-        # Transfere os dados salvos para a memória do app
         st.session_state["xp_atual"] = dados_carregados.get("xp", 0)
         st.session_state["nivel_atual"] = dados_carregados.get("nivel", 1)
         st.session_state["cupons_usados_ids"] = dados_carregados.get("cupons_usados", [])
         st.session_state["conquistas_ids"] = dados_carregados.get("conquistas_desbloqueadas", ["primeiro_passo"])
     except Exception:
-        # Fallback de segurança para o app nunca quebrar
         if "xp_atual" not in st.session_state: st.session_state["xp_atual"] = 0
         if "nivel_atual" not in st.session_state: st.session_state["nivel_atual"] = 1
         if "cupons_usados_ids" not in st.session_state: st.session_state["cupons_usados_ids"] = []
         if "conquistas_ids" not in st.session_state: st.session_state["conquistas_ids"] = ["primeiro_passo"]
 
 def salvar_progresso_banco():
-    """
-    Pega os dados atuais da navegação da Sara e salva permanentemente no arquivo.
-    """
     dados_para_salvar = {
         "xp": st.session_state.get("xp_atual", 0),
         "nivel": st.session_state.get("nivel_atual", 1),
@@ -84,38 +92,27 @@ def salvar_progresso_banco():
 # ------------------------------------------------------------------
 
 def carregar_cupons():
-    """
-    Retorna a lista estruturada de cupons marcando dinamicamente 
-    quais já foram utilizados com base no banco de dados.
-    """
-    # Garante que o estado dos IDs usados existe
     if "cupons_usados_ids" not in st.session_state:
         carregar_progresso_banco()
         
     cupons_base = [
         {"id": 1, "titulo": "Vale 1 Massagem de 30 min 💆‍♀️", "descricao": "Direito a óleo perfumado e música calma."},
         {"id": 2, "titulo": "Vale 1 Jantar Especial 🍝", "descricao": "Pago e escolhido inteiramente pelo Denner."},
-        {"id": 3, "titulo": "Vale Cinema em Casa 🍿", "descricao": "Você escolher o filme e eu faço a pipoca (sem reclamar!)."},
+        {"id": 3, "titulo": "Vale Cinema em Casa 🍿", "descricao": "Você escolhe o filme e eu faço a pipoca (sem reclamar!)."},
         {"id": 4, "titulo": "Vale Rodada de Cafuné Unlimited 🧸", "descricao": "Válido até você ou eu dormirmos."},
         {"id": 5, "titulo": "Vale Sair para comer Doce 🍰", "descricao": "Uma caçada aos melhores doces da Asa Norte."},
     ]
     
-    # Adiciona a marcação True/False dinamicamente baseada no banco de dados JSON
     for cupom in cupons_base:
         cupom["usado"] = cupom["id"] in st.session_state.get("cupons_usados_ids", [])
         
     return cupons_base
 
 def carregar_conquistas():
-    """
-    Lista de Medalhas da Sara. Valida se ela conquistou cada uma
-    olhando direto no histórico persistente do banco de dados.
-    """
     cupons_usados = st.session_state.get("cupons_usados_ids", [])
     
-    # Regras dinâmicas para desbloqueio
-    cafune_desbloqueado = 4 in cupons_usados   # ID 4 é o cupom de cafuné
-    cinema_desbloqueado = 3 in cupons_usados   # ID 3 é o cupom de cinema
+    cafune_desbloqueado = 4 in cupons_usados   
+    cinema_desbloqueado = 3 in cupons_usados   
     nivel_rpg = st.session_state.get("nivel_atual", 1)
 
     conquistas = [
@@ -149,7 +146,6 @@ def carregar_conquistas():
         }
     ]
     
-    # Atualiza a lista oficial de IDs salvos para guardar no arquivo JSON
     st.session_state["conquistas_ids"] = [c["id"] for c in conquistas if c["desbloqueada"]]
     salvar_progresso_banco()
     
@@ -161,11 +157,9 @@ def adicionar_xp(quantidade):
         
     st.session_state["xp_atual"] += quantidade
     
-    # Sistema de Level Up (Cada 100 de XP = 1 Nível)
     while st.session_state["xp_atual"] >= 100:
         st.session_state["xp_atual"] -= 100
         st.session_state["nivel_atual"] += 1
         st.toast(f"🎉 PARABÉNS! Você subiu para o Nível {st.session_state['nivel_atual']}!", icon="⭐")
         
-    # Salva fisicamente o novo XP no JSON!
     salvar_progresso_banco()
