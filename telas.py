@@ -44,9 +44,8 @@ def exibir_missoes(df_missoes):
     st.write("Aqui estão os seus desafios temporais. Cumpra-os na vida real para ganhar XP!")
     st.markdown("---")
     
-    # 🌟 INTEGRADO COM O BANCO DE DADOS LOCAL
-    if "xp_atual" not in st.session_state:
-        dados.carregar_progresso_banco()
+    # 🌟 CORREÇÃO: Força a sincronia limpa com o arquivo JSON antes de tudo
+    dados.carregar_progresso_banco()
 
     if not df_missoes:
         st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
@@ -54,12 +53,10 @@ def exibir_missoes(df_missoes):
 
     # Percorre a lista gerando um índice numérico (idx) automático para cada botão
     for idx, missao in enumerate(df_missoes):
-        # Captura os dados tratando possíveis variações de letras maiúsculas/minúsculas
         titulo = missao.get("Titulo", missao.get("titulo", "Missão Secreta"))
         tipo = missao.get("Tipo_Missao", missao.get("tipo", "Fácil (Cotidiana)"))
         gif = missao.get("Gif", missao.get("gif", ""))
         
-        # Define a recompensa de XP baseada no texto do tipo de missão
         if "Diária" in str(tipo) or "DIÁRIA" in str(titulo) or "Fácil" in str(tipo):
             xp_ganho = 50
         elif "Semanal" in str(tipo) or "SEMANAL" in str(titulo) or "Média" in str(tipo):
@@ -67,10 +64,8 @@ def exibir_missoes(df_missoes):
         else:
             xp_ganho = 500
             
-        # Usa o índice numérico da linha como o ID único do botão
         id_unico_missao = f"missao_num_{idx}"
         
-        # Criamos o histórico em session_state baseado na sessão do dia
         if "feitas_hoje" not in st.session_state:
             st.session_state["feitas_hoje"] = []
             
@@ -84,12 +79,30 @@ def exibir_missoes(df_missoes):
             </div>
         """, unsafe_allow_html=True)
         
-        # Mostra o Gif correspondente se ele estiver configurado
         if gif:
             try:
                 st.image(gif, width=250)
             except Exception:
                 pass
+            
+        if ja_feita:
+            st.success("✅ Você já concluiu essa missão e coletou o XP!")
+        else:
+            if st.button(f"🎯 Concluir Desafio ({xp_ganho} XP)", key=f"btn_ctrl_{id_unico_missao}"):
+                # Registra na lista da sessão atual do navegador
+                st.session_state["feitas_hoje"].append(id_unico_missao)
+                
+                # 🌟 CHAMA A FUNÇÃO CORRETA: Adiciona e salva no arquivo permanentemente
+                dados.adicionar_xp(xp_ganho)
+                
+                st.balloons()
+                st.success(f"Incrível! Você ganhou {xp_ganho} XP para a sua jornada! ⭐")
+                
+                # Aguarda um milissegundo para o Streamlit persistir o arquivo e recarrega
+                st.rerun()
+                
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("---")
             
         # Sistema de Botão Corrigido usando chaves únicas numéricas e salvamento no JSON
         if ja_feita:
