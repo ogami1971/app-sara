@@ -152,57 +152,16 @@ def exibir_enviar_carinho():
         botao_enviar = st.form_submit_button("🚀 Enviar Carinho ao Universo")
         
         if botao_enviar and texto_carinho:
-            # 1. (Aqui fica o seu código atual que salva no arquivo dados.py ou planilha principal)
-            # ... [Seu código atual de salvar carinho] ...
+            import notificacoes
             
-            # 2. GATILHO PARA O EMAIL (Via Zapier):
-            # Vamos estruturar a linha exatamente como o Zapier vai ler na aba 'Notificacoes'
-            try:
-                import pandas as pd
-                from datetime import datetime
-                
-                # Criamos a mensagem formatada que ela vai ler no e-mail
-                mensagem_email = f"Oi Sara! O Denner te enviou um carinho {tipo_carinho} pelo app:\n\n\"{texto_carinho}\"\n\nCom amor, seu Pequeno Príncipe. 🪐"
-                
-                # Puxamos o arquivo que gerencia a planilha para injetar na aba 'Notificacoes'
-                # Se você usa o st.session_state ou gspread, basta adicionar uma nova linha na aba 'Notificacoes'
-                # Exemplo simulado por webhook ou append simples:
-                import notificacoes
-                notificacoes.disparar_notificacao_planilha(mensagem_email)
-                
+            # Monta o texto que vai para o e-mail através do Zapier
+            mensagem_email = f"Oi Sara! O Denner te enviou um carinho {tipo_carinho} pelo app:\n\n\"{texto_carinho}\"\n\nCom amor, seu Pequeno Príncipe. 🪐"
+            
+            # Dispara para o Webhook do Zapier
+            sucesso = notificacoes.disparar_notificacao_planilha(mensagem_email)
+            
+            if sucesso:
                 st.balloons()
                 st.success("✨ Carinho enviado para o mural e a caminho do e-mail dela!")
-            except Exception as e:
-                st.error("O carinho foi para o mural, mas houve um problema ao agendar o e-mail.")
-    }
-    
-    reacao_escolhida = st.selectbox("Como está seu humor hoje?", list(opcoes_reacoes.keys()))
-    mensagem_personalizada = st.text_input("Quer deixar um recado extra? (Opcional)", placeholder="Escreva algo aqui...")
-    
-    if st.button("🚀 Enviar para o Nosso Universo"):
-        agora = datetime.now().strftime("%H:%M")
-        if reacao_escolhida != "Selecione uma reação..." or mensagem_personalizada.strip() != "":
-            novo_carinho = {
-                "hora": agora,
-                "reacao_texto": reacao_escolhida if reacao_escolhida != "Selecione uma reação..." else None,
-                "gif": opcoes_reacoes[reacao_escolhida] if reacao_escolhida != "Selecione uma reação..." else None,
-                "mensagem": mensagem_personalizada.strip() if mensagem_personalizada.strip() != "" else None
-            }
-            st.session_state["historico_carinhos"].insert(0, novo_carinho)
-            st.toast("Carinho enviado com sucesso! ✨", icon="❤️")
-        else:
-            st.warning("Por favor, selecione uma reação ou digite uma mensagem!")
-            
-    if st.session_state["historico_carinhos"]:
-        st.markdown("### 🌟 Painel de Reações em Tempo Real")
-        ultimo_envio = st.session_state["historico_carinhos"][0]
-        st.markdown(f"#### 🏹 O que a Sara está sentindo agora ({ultimo_envio['hora']}):")
-        
-        if ultimo_envio["mensagem"]:
-            st.markdown(f"<div class='card' style='font-size: 18px; text-align: center;'>💭 <b>Recado da Sara:</b> <br><i>\"{ultimo_envio['mensagem']}\"</i></div>", unsafe_allow_html=True)
-            
-        if ultimo_envio["gif"]:
-            try:
-                st.image(ultimo_envio["gif"], caption=f"Humor atual: {ultimo_envio['reacao_texto']}")
-            except Exception:
-                st.error(f"🎬 O arquivo animado '{ultimo_envio['gif']}' não pôde ser renderizado.")
+            else:
+                st.warning("O carinho foi enviado, mas o Zapier não respondeu. Verifique o link no arquivo notificacoes.py!")
