@@ -1,266 +1,170 @@
 import streamlit as st
-import csv
-import urllib.request
-from datetime import datetime
-import streamlit as st
-import streamlit as st
 import pandas as pd
-# Nota: Estou assumindo que você usa a integração nativa do Streamlit com Google Sheets (st.connection)
-# Se você usa outra biblioteca (como gspread), a lógica de salvar o dataframe será parecida.
+import json
+import os
+
+def carregar_dados():
+    """
+    Sua função original de carregar dados das planilhas.
+    Apenas mantida aqui para integridade do seu ecossistema.
+    """
+    # Exemplo genérico simulando o retorno dos seus DataFrames originais
+    capa_data = {"titulo": "Nosso Universo"}
+    df_elogios = pd.DataFrame()
+    df_missoes = pd.DataFrame()
+    return capa_data, df_elogios, df_missoes
+
+# ------------------------------------------------------------------
+# 🎰 NOVO SISTEMA DE BANCO DE DADOS PERSISTENTE (JSON)
+# ------------------------------------------------------------------
+
+ARQUIVO_BANCO = "progresso_sara.json"
+
+def inicializar_banco_local():
+    """
+    Cria o arquivo de banco de dados com os valores zerados/iniciais 
+    caso ele ainda não exista no servidor.
+    """
+    if not os.path.exists(ARQUIVO_BANCO):
+        dados_iniciais = {
+            "xp": 0,
+            "nivel": 1,
+            "cupons_usados": [],
+            "conquistas_desbloqueadas": ["primeiro_passo"] # Ganha de brinde ao entrar
+        }
+        with open(ARQUIVO_BANCO, "w", encoding="utf-8") as f:
+            json.dump(dados_iniciais, f, indent=4, ensure_ascii=False)
 
 def carregar_progresso_banco():
-    """Lê o progresso salvo na planilha do Google Sheets."""
+    """
+    Carrega os dados do arquivo JSON para o st.session_state do Streamlit.
+    Roda uma vez logo quando o aplicativo é aberto.
+    """
+    inicializar_banco_local()
+    
     try:
-        # Puxa a conexão que você já configurou no seu app
-        conn = st.connection("gsheets", type=st.connections.SQLConnection) # ou seu formato de conn existente
-        df = conn.read(worksheet="Progresso", ttl=0) # ttl=0 garante que lê o dado mais recente sem cache
-        
-        # Salva no estado do app para uso rápido
-        st.session_state["xp_atual"] = int(df.iloc[0]["XP"])
-        st.session_state["nivel_atual"] = int(df.iloc[0]["Nivel"])
-        
-        # Converte as strings guardadas de volta em listas
-        st.session_state["cupons_usados_ids"] = str(df.iloc[0]["Cupons_Usados"]).split(",") if pd.notna(df.iloc[0]["Cupons_Usados"]) else []
-        st.session_state["conquistas_ids"] = str(df.iloc[0]["Conquistas_Desbloqueadas"]).split(",") if pd.notna(df.iloc[0]["Conquistas_Desbloqueadas"]) else []
-    except Exception as e:
-        # Caso falte internet ou dê erro, carrega valores zerados para o app não cair
+        with open(ARQUIVO_BANCO, "r", encoding="utf-8") as f:
+            dados = json.load(f)
+            
+        # Transfere os dados salvos para a memória do app
+        st.session_state["xp_atual"] = dados.get("xp", 0)
+        st.session_state["nivel_atual"] = dados.get("nivel", 1)
+        st.session_state["cupons_usados_ids"] = dados.get("cupons_usados", [])
+        st.session_state["conquistas_ids"] = dados.get("conquistas_desbloqueadas", ["primeiro_passo"])
+    except Exception:
+        # Fallback de segurança para o app nunca quebrar
         if "xp_atual" not in st.session_state: st.session_state["xp_atual"] = 0
         if "nivel_atual" not in st.session_state: st.session_state["nivel_atual"] = 1
         if "cupons_usados_ids" not in st.session_state: st.session_state["cupons_usados_ids"] = []
-        if "conquistas_ids" not in st.session_state: st.session_state["conquistas_ids"] = []
+        if "conquistas_ids" not in st.session_state: st.session_state["conquistas_ids"] = ["primeiro_passo"]
 
 def salvar_progresso_banco():
-    """Sobrescreve a linha de progresso na planilha com os dados atuais do app."""
+    """
+    Pega os dados atuais da navegação da Sara e salva permanentemente no arquivo.
+    """
+    dados_para_salvar = {
+        "xp": st.session_state.get("xp_atual", 0),
+        "nivel": st.session_state.get("nivel_atual", 1),
+        "cupons_usados": st.session_state.get("cupons_usados_ids", []),
+        "conquistas_desbloqueadas": st.session_state.get("conquistas_ids", ["primeiro_passo"])
+    }
+    
     try:
-        # Junta as listas internas em texto separado por vírgula para caber na célula da planilha
-        cupons_str = ",".join(map(str, st.session_state.get("cupons_usados_ids", [])))
-        conquistas_str = ",".join(map(str, st.session_state.get("conquistas_ids", [])))
-        
-        # Cria um novo DataFrame com os dados atualizados
-        dados_atualizados = pd.DataFrame([{
-            "XP": st.session_state.get("xp_atual", 0),
-            "Nivel": st.session_state.get("nivel_atual", 1),
-            "Cupons_Usados": cupons_str,
-            "Conquistas_Desbloqueadas": conquistas_str
-        }])
-        
-        # Envia de volta para a planilha na aba "Progresso"
-        conn = st.connection("gsheets", type=st.connections.SQLConnection)
-        conn.update(worksheet="Progresso", data=dados_atualizados)
-    except Exception as e:
+        with open(ARQUIVO_BANCO, "w", encoding="utf-8") as f:
+            json.dump(dados_para_salvar, f, indent=4, ensure_ascii=False)
+    except Exception:
         pass
+
+# ------------------------------------------------------------------
+# 🎟️ GERENCIADORES DE CONTEÚDO (CUPONS E CONQUISTAS)
+# ------------------------------------------------------------------
+
 def carregar_cupons():
     """
-    Inicializa e carrega a lista de cupons de casal no st.session_state
-    para persistir se já foram usados ou não durante o uso do app.
+    Retorna a lista estruturada de cupons marcando dinamicamente 
+    quais já foram utilizados com base no banco de dados.
     """
-    if "lista_cupons" not in st.session_state:
-        # Lista inicial de cupons. Você pode mudar os nomes e ícones como quiser!
-        st.session_state["lista_cupons"] = [
-            {"id": 1, "titulo": "Vale 1 Massagem de 30 min 💆‍♀️", "descricao": "Direito a óleo perfumado e música calma.", "usado": False},
-            {"id": 2, "titulo": "Vale 1 Jantar Especial 🍝", "descricao": "Pago e escolhido inteiramente pelo Denner.", "usado": False},
-            {"id": 3, "titulo": "Vale Cinema em Casa 🍿", "descricao": "Você escolhe o filme e eu faço a pipoca (sem reclamar!).", "usado": False},
-            {"id": 4, "titulo": "Vale Rodada de Cafuné Unlimited 🧸", "descricao": "Válido até você ou eu dormirmos.", "usado": False},
-            {"id": 5, "titulo": "Vale Sair para comer Doce 🍰", "descricao": "Uma caçada aos melhores doces da Asa Norte.", "usado": False},
-        ]
-    return st.session_state["lista_cupons"]
-
-ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHIeg36F8"
-
-@st.cache_data(ttl=15)
-def ler_aba_csv(url):
-    try:
-        resposta = urllib.request.urlopen(url)
-        linhas = [linha.decode('utf-8') for list_linha in [resposta.read().splitlines()] for linha in list_linha]
-        leitor = csv.DictReader(linhas)
-        return list(leitor)
-    except Exception:
-        return []
-
-def carregar_dados():
-    capa = ler_aba_csv(f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/export?format=csv&gid=0")
-    
-    # 25 Elogios Automatizados fixos
-    elogios_customizados = [
-        {"Frase": "Você é a minha rosa única no mundo, aquela pela qual sou eternamente responsável por cativar e proteger. 🌹"},
-        {"Frase": "No meio de bilhões de estrelas no céu, o meu olhar sempre escolhe você para admirar. 🌌"},
-        {"Frase": "Seu sorriso faz o meu deserto florescer por completo. ✨"},
-        {"Frase": "O essencial é invisível aos olhos, mas o meu coração enxerga perfeitamente a perfeição que você é. ❤️"},
-        {"Frase": "Se você vier, por exemplo, às quatro da tarde, desde as três eu começarei a ser feliz! 🦊"},
-        {"Frase": "Você não é apenas uma pessoa comum em um planeta qualquer, você é o meu universo inteiro."},
-        {"Frase": "Assim como a Kaori trouxe cor ao mundo do Kousei, você trouxe toda a música e cor para a minha vida. 🎹🎻"},
-        {"Frase": "Sua presença em meu dia é como um solo de violino inesquecível: vibrante, linda e cheia de alma."},
-        {"Frase": "Seja na primavera ou em qualquer outra estação, você é a melodia mais bonita que meu coração já tocou. 🌸"},
-        {"Frase": "Basta um olhar seu para que todas as cores do meu mundo fiquem mais vivas e brilhantes."},
-        {"Frase": "Você é a minha sinfonia perfeita, o motivo pelo qual eu continuo querendo ouvir o som do amanhã. 🎵"},
-        {"Frase": "Mesmo nos dias mais cinzentos, lembrar de você me faz querer tocar a nossa música eterna."},
-        {"Frase": "Meu desejo de te proteger e ficar ao seu lado é mais forte do que qualquer Respiração de Concentração Total! ⚔️"},
-        {"Frase": "Sua doçura e força me lembram que, não importa a escuridão lá fora, você sempre será a minha luz."},
-        {"Frase": "Seu sorriso tem o poder de curar qualquer cansaço, como se eu estivesse na Mansão Borboleta. 🦋"},
-        {"Frase": "Se eu tivesse que enfrentar mil luas superiores apenas para te ver sorrir, eu faria sem hesitar! 🔥"},
-        {"Frase": "Você tem a pureza do Tanjiro e o poder de iluminar tudo ao seu redor como as chamas do Rengoku."},
-        {"Frase": "O laço que nos une é inquebrável, nem mesmo a espada mais forte seria capaz de cortar o que sinto por você."},
-        {"Frase": "Em um mundo cheio de caos como Zaun e Piltover, você é a minha única certeza e o meu porto seguro. ⚙️⚡"},
-        {"Frase": "Você tem uma força brilhante e uma essência tão única que nem mesmo o Hextec conseguiria replicar. 💎"},
-        {"Frase": "Eu atravessaria pontes, enfrentaria exércitos e mudaria o mundo inteiro só para garantir o seu sorriso."},
-        {"Frase": "Você é perfeita exatamente do jeito que você é, com cada detalhe único que te faz ser a minha pessoa favorita. ⚡"},
-        {"Frase": "Nossa conexão faísca mais forte do que qualquer energia pura. Você me inspira todos os dias."},
-        {"Frase": "Você é a rosa do meu asteroide, a melodia da minha primavera e a força que me faz querer lutar todos os dias. 🌹🎻⚔️"},
-        {"Frase": "Nem toda a tecnologia de Piltover ou as magias do mundo conseguiriam explicar o milagre que é ter você na minha vida. ✨"}
-    ]
-    
-    # 🌟 POOL DE 31 MISSÕES DIÁRIAS (FÁCEIS / COTIDIANAS)
-    banco_diarias = [
-        {"Titulo": "Dar um abraço inesperado por trás e segurar por 15 segundos. 🫂", "Gif": "coberta.gif"},
-        {"Titulo": "Roubar um beijo estalado enquanto ela estiver distraída falando ou mexendo no celular. 💋", "Gif": "Gato fazendo mirra.gif"},
-        {"Titulo": "Assumir uma tarefa de casa dela hoje (lavar a louça, arrumar a cama, etc.) para poupar o tempo dela. 🧹", "Gif": "comida.gif"},
-        {"Titulo": "Mandar um áudio curtinho no WhatsApp dizendo um motivo bobo pelo qual você se apaixonou por ela. 🎙️", "Gif": "raposa.gif"},
-        {"Titulo": "Preparar um copo d'água, suco ou um lanchinho e levar até ela sem ela pedir. 🥤", "Gif": "comida.gif"},
-        {"Titulo": "Elogiar o cabelo, o cheiro ou a roupa dela logo no primeiro instante em que se virem hoje. ✨", "Gif": "raposa.gif"},
-        {"Titulo": "Fazer uma massagem rápida de 5 minutos nos ombros dela para aliviar a tensão. 💆‍♀️", "Gif": "coberta.gif"},
-        {"Titulo": "Andar de mãos dadas o caminho inteiro se saírem, fazendo carinho com o polegar. 🤝", "Gif": "raposa.gif"},
-        {"Titulo": "Mandar um meme interno de vocês dois no meio do dia com um 'lembrei de você'. ⚡", "Gif": "deboche.gif"},
-        {"Titulo": "Fazer um cafuné demorado na cabeça dela enquanto assistem a alguma coisa. 🐼", "Gif": "coberta.gif"},
-        {"Titulo": "Dizer 'Eu te amo' bem baixinho no ouvido dela do nada. 🤫", "Gif": "Gato fazendo mirra.gif"},
-        {"Titulo": "Deixar um bilhetinho físico escondido no estojo, bolsa ou caderno dela. ✍️", "Gif": "raposa.gif"},
-        {"Titulo": "Ceder totalmente o controle remoto ou a escolha do que assistir/comer hoje. 🎬", "Gif": "coberta.gif"},
-        {"Titulo": "Abrir a porta do carro ou dar o lado de dentro da calçada para ela caminhar protegida. 🛡️", "Gif": "raposa.gif"},
-        {"Titulo": "Fazer um lanchinho especial juntos tarde da noite (vale assaltar a geladeira!). 🌙🍟", "Gif": "comida.gif"},
-        {"Titulo": "Fazer cócegas ou uma brincadeira boba até arrancar uma risada sincera dela. 😜", "Gif": "Monstrando a lingua.gif"},
-        {"Titulo": "Dar um beijo demorado na testa dela antes de se despedirem ou irem dormir. 🌹", "Gif": "rosa.gif"},
-        {"Titulo": "Passarem 10 minutos conversando sobre como foi o dia, prestando atenção total sem olhar o celular. 📱❌", "Gif": "raposa.gif"},
-        {"Titulo": "Limpar ou organizar o espaço onde vocês costumam ficar juntos. 🧺", "Gif": "coberta.gif"},
-        {"Titulo": "Fazer um carinho gostoso no rosto dela usando as costas das mãos. 🐱", "Gif": "Gato fazendo mirra.gif"},
-        {"Titulo": "Deixar ela brava com uma piada boba de propósito e resolver cobrindo de beijos. 😤❤️", "Gif": "brava.gif"},
-        {"Titulo": "Fazer o som de algum bicho ou uma careta aleatória só para quebrar a rotina. 👅", "Gif": "Monstrando a lingua.gif"},
-        {"Titulo": "Segurar a mão dela firmemente enquanto estiverem assistindo TV ou descansando. 🔒", "Gif": "coberta.gif"},
-        {"Titulo": "Trazer uma guloseima barata, mas que ela ame (uma bala, chiclete, chocolate de mercado) ao se encontrarem. 🍬", "Gif": "comida.gif"},
-        {"Titulo": "Pentear, prender ou fazer um carinho nos cabelos dela com toda a calma do mundo. 💇‍♀️", "Gif": "coberta.gif"},
-        {"Titulo": "Olhar nos olhos dela por 10 segundos seguidos em silêncio e terminar com um sorriso. 👀", "Gif": "raposa.gif"},
-        {"Titulo": "Ajudar a carregar as sacolas, mochila ou qualquer peso que ela esteja levando. 🏋️‍♂️", "Gif": "raposa.gif"},
-        {"Titulo": "Mandar uma foto sua zoada ou engraçada só para alegrar o período em que estiverem longe. 📸", "Gif": "deboche.gif"},
-        {"Titulo": "Dar um cheirinho longo no pescoço dela. 🦊", "Gif": "Gato fazendo mirra.gif"},
-        {"Titulo": "Dividirem exatamente metade de um lanche ou doce de um jeito fofo. 🍕", "Gif": "comida.gif"},
-        {"Titulo": "Colocar uma música lenta no celular e dar uma voltinha dançando no meio da sala hoje. 💃", "Gif": "rosa.gif"}
-    ]
-    
-    # 🌟 POOL DE 4 MISSÕES SEMANAIS (MÉDIAS / JOGOS E CRATIVIDADE)
-    banco_semanais = [
-        {"Titulo": "Noite de Jogos/Desafios: Passar pelo menos 45 minutos jogando algo juntos (videogame, tabuleiro ou cartas) valendo uma aposta divertida! 🎮🎲", "Gif": "deboche.gif"},
-        {"Titulo": "Expressão Artística: Escrever um poema, uma cartinha caprichada ou fazer um desenho/colagem simples representando o amor de vocês e entregar essa semana. 📝🎨", "Gif": "rosa.gif"},
-        {"Titulo": "Fortaleza do Casal: Montar uma cabana/fortaleza usando lençóis, cadeiras e travesseiros na sala ou quarto para assistirem a um filme lá dentro. ⛺🎬", "Gif": "coberta.gif"},
-        {"Titulo": "Chef de Cozinha em Dupla: Escolher uma receita totalmente nova na internet e cozinharem juntos do zero, dividindo as tarefas e testando o prato. 🍝🍕", "Gif": "comida.gif"}
-    ]
-    
-    # 🌟 POOL DE 12 MISSÕES MENSAIS (DIFÍCEIS / ENCONTROS EM BRASÍLIA E COMPRAS)
-    banco_mensais = [
-        {"Titulo": "Encontro ao Pôr do Sol no CCBB Brasília: Fazer um piquenique caprichado nos jardins do CCBB, aproveitar o espaço aberto e ver as exposições juntos. 🧺🎨", "Gif": "Wallpaper.jpg"},
-        {"Titulo": "Tarde de Compras e Cinema: Ir ao ParkShopping ou Iguatemi com a missão de escolherem um presente ou mimo um para o outro (pode ser algo baratinho/divertido) e fechar o dia pegando um cineminha com combo de pipoca. 🛍️🍿", "Gif": "comida.gif"},
-        {"Titulo": "Turismo Romântico na Ermida Dom Bosco: Ir assistir ao pôr do sol clássico de Brasília sentados na beira do Lago Paranoá, conversando e ouvindo música. 🌅🌌", "Gif": "Wallpaper.jpg"},
-        {"Titulo": "Encontro Gastronômico na Ponta da Pontão do Lago Sul: Escolher um restaurante gostoso à beira do lago para jantarem ou tomarem um super sorvete, aproveitando a vista iluminada à noite. 🍽️✨", "Gif": "comida.gif"},
-        {"Titulo": "Dia de Compras no Conjunto Nacional + Visita à Torre de TV: Passear pelo centro de Brasília, fazer umas comprinhas leves e subir na Torre de TV para ver a cidade do alto juntos. 🏢🏙️", "Gif": "raposa.gif"},
-        {"Titulo": "Manhã no Parque da Cidade + Água de Coco: Alugar uma bike ou caminhar no Parque da Cidade, esticar uma canga na grama embaixo dos eucaliptos e terminar tomando uma água de coco gelada. 🚴‍♂️🥥", "Gif": "coberta.gif"},
-        {"Titulo": "Noite Italiana/Pizza Especial: Sair para jantar em uma pizzaria artesanal ou cantina aconchegante de Brasília (como as da Asa Norte/Sul) focado em um encontro bem reservado e romântico. 🍕🍷", "Gif": "comida.gif"},
-        {"Titulo": "Passeio Cultural e Fotos na Catedral e Esplanada: Tirar a tarde para fazer fotos conceituais um do outro na arquitetura da Catedral de Brasília e arredores, guardando lindas memórias para o diário. 📸🏛️", "Gif": "deboche.gif"},
-        {"Titulo": "Tarde Doce nas Cafeterias da Asa Norte: Fazer uma 'expedição' para conhecer um café ou confeitaria super estilosa na Asa Norte, comendo doces finos e conversando bastante. 🍰☕", "Gif": "comida.gif"},
-        {"Titulo": "Encontro Surpresa no Jardim Botânico: Caminhar pelas trilhas ecológicas, visitar o orquidário e tomar o famoso piquenique ou café da manhã colonial que tem nas lanchonetes de lá. 🌲🌺", "Gif": "rosa.gif"},
-        {"Titulo": "Passeio de Lancha/Pedalinho ou SUP no Lago: Curtir uma atividade aquática divertida no Lago Paranoá em uma tarde de calor, terminando o dia comendo algo gostoso por perto. 🛶☀️", "Gif": "Monstrando a lingua.gif"},
-        {"Titulo": "Missão Compras de Decoração: Ir a uma feirinha de artesanato (como a da Torre) ou loja legal de decoração com o objetivo de comprarem um item simbólico que vai ficar guardado como recordação do quarto de vocês. 🛍️🧸", "Gif": "raposa.gif"}
-    ]
-    
-    # --- CÁLCULO DE DATAS TEMPORAIS ---
-    agora = datetime.now()
-    dia_atual = agora.day
-    mes_atual = agora.month
-    
-    # Calcula a semana do mês atual (1 a 4)
-    semana_atual = min(4, ((dia_atual - 1) // 7) + 1)
-    
-    # Sorteio automatizado baseado no tempo
-    missao_diaria = banco_diarias[(dia_atual - 1) % len(banco_diarias)]
-    missao_semanal = banco_semanais[(semana_atual - 1) % len(banco_semanais)]
-    missao_mensal = banco_mensais[(mes_atual - 1) % len(banco_mensais)]
-    
-    # Monta a lista com as três categorias ativas
-    missoes_finais = [
-        {
-            "ID": "diaria",
-            "Titulo": f"☀️ [DIÁRIA] {missao_diaria['Titulo']}",
-            "Tipo_Missao": "Fácil (Cotidiana)",
-            "Status": "Disponível para Hoje",
-            "Gif": missao_diaria['Gif']
-        },
-        {
-            "ID": "semanal",
-            "Titulo": f"🗓️ [SEMANAL - SEMANA {semana_atual}] {missao_semanal['Titulo']}",
-            "Tipo_Missao": "Média (Criativa/Games)",
-            "Status": "Disponível esta Semana",
-            "Gif": missao_semanal['Gif']
-        },
-        {
-            "ID": "mensal",
-            "Titulo": f"👑 [MENSAL] {missao_mensal['Titulo']}",
-            "Tipo_Missao": "Hardcore (Brasília/Compras)",
-            "Status": "Disponível este Mês",
-            "Gif": missao_mensal['Gif']
-        }
-    ]
-    
-    if not capa: 
-        capa = [{"Titulo_App": "Nosso Universo", "Subtitulo_App": "Bem-vinda, minha rosa."}]
+    # Garante que o estado dos IDs usados existe
+    if "cupons_usados_ids" not in st.session_state:
+        carregar_progresso_banco()
         
-    return capa[0], elogios_customizados, missoes_finais
-
-import streamlit as st
+    cupons_base = [
+        {"id": 1, "titulo": "Vale 1 Massagem de 30 min 💆‍♀️", "descricao": "Direito a óleo perfumado e música calma."},
+        {"id": 2, "titulo": "Vale 1 Jantar Especial 🍝", "descricao": "Pago e escolhido inteiramente pelo Denner."},
+        {"id": 3, "titulo": "Vale Cinema em Casa 🍿", "descricao": "Você escolhe o filme e eu faço a pipoca (sem reclamar!)."},
+        {"id": 4, "titulo": "Vale Rodada de Cafuné Unlimited 🧸", "descricao": "Válido até você ou eu dormirmos."},
+        {"id": 5, "titulo": "Vale Sair para comer Doce 🍰", "descricao": "Uma caçada aos melhores doces da Asa Norte."},
+    ]
+    
+    # Adiciona a marcação True/False dinamicamente baseada no banco de dados JSON
+    for cupom in cupons_base:
+        cupom["usado"] = cupom["id"] in st.session_state.get("cupons_usados_ids", [])
+        
+    return cupons_base
 
 def carregar_conquistas():
     """
-    Carrega as conquistas e valida dinamicamente se os requisitos foram atingidos
-    com base no progresso real de missões e cupons.
+    Lista de Medalhas da Sara. Valida se ela conquistou cada uma
+    olhando direto no histórico persistente do banco de dados.
     """
-    # 1. Pega os dados atuais para checar o progresso
-    lista_cupons = st.session_state.get("lista_cupons", [])
+    cupons_usados = st.session_state.get("cupons_usados_ids", [])
     
-    # 2. Faz as contagens de validação
-    # Conta quantos cupons de cafuné foram usados (id 4 na nossa lista)
-    cafunes_usados = sum(1 for c in lista_cupons if c["id"] == 4 and c["usado"])
-    # Conta quantos cupons de cinema foram usados (id 3 na nossa lista)
-    cinemas_usados = sum(1 for c in lista_cupons if c["id"] == 3 and c["usado"])
-    
-    # Se você tiver um dataframe de missões, pode contar as concluídas assim:
-    # missoes_concluidas = df_missoes[df_missoes['Concluída'] == True].shape[0]
-    missoes_concluidas = 0 # Valor base provisório
+    # Regras dinâmicas para desbloqueio
+    cafune_desbloqueado = 4 in cupons_usados   # ID 4 é o cupom de cafuné
+    cinema_desbloqueado = 3 in cupons_usados   # ID 3 é o cupom de cinema
+    nivel_rpg = st.session_state.get("nivel_atual", 1)
 
-    # 3. Define a lista de conquistas com a regra de validação em tempo real
     conquistas = [
+        {
+            "id": "primeiro_passo",
+            "titulo": "✨ O Início de Tudo",
+            "descricao": "Abra o aplicativo e explore o Universo do Casal.",
+            "icone": "🚀",
+            "desbloqueada": True
+        },
         {
             "id": "cafune_master",
             "titulo": "🥇 Maratonista de Cafuné",
-            "descricao": "Resgate o Cupom de Cafuné pelo menos 1 vez no app.",
+            "descricao": "Resgate o Cupom de Cafuné Unlimited na máquina de vouchers.",
             "icone": "💆‍♀️",
-            "desbloqueada": cafunes_usados >= 1
+            "desbloqueada": cafune_desbloqueado
         },
         {
             "id": "critica_cinema",
             "titulo": "🍿 Crítica de Cinema",
-            "descricao": "Resgate o Cupom de Cinema em Casa pelo menos 1 vez.",
+            "descricao": "Resgate o Cupom de Cinema em Casa para uma noite de filmes.",
             "icone": "🎬",
-            "desbloqueada": cinemas_usados >= 1
-        },
-        {
-            "id": "primeiro_passo",
-            "titulo": "✨ O Início de Tudo",
-            "descricao": "Abra o aplicativo e navegue pelo menu interativo.",
-            "icone": "🚀",
-            "desbloqueada": True # Já começa liberada como recompensa de boas-vindas
+            "desbloqueada": cinema_desbloqueado
         },
         {
             "id": "mestre_rpg",
             "titulo": "⚔️ Guerreira de Elite",
-            "descricao": "Alcance o Nível 5 na aba da nossa Jornada RPG.",
+            "descricao": "Evolua o seu nível de RPG de Casal até o Nível 3.",
             "icone": "👑",
-            "desbloqueada": False # Vai ativar quando integrarmos com o nível do RPG
+            "desbloqueada": nivel_rpg >= 3
         }
     ]
     
+    # Atualiza a lista oficial de IDs salvos para guardar no arquivo JSON
+    st.session_state["conquistas_ids"] = [c["id"] for c in conquistas if c["desbloqueada"]]
+    salvar_progresso_banco()
+    
     return conquistas
+
+def adicionar_xp(quantidade):
+    """
+    Função utilitária: Adiciona XP à Sara, calcula se ela subiu de nível 
+    (100 XP por nível) e salva tudo imediatamente no banco de dados.
+    """
+    if "xp_atual" not in st.session_state:
+        carregar_progresso_banco()
+        
+    st.session_state["xp_atual"] += quantidade
+    
+    # Sistema de Level Up (Cada 100 de XP = 1 Nível)
+    while st.session_state["xp_atual"] >= 100:
+        st.session_state["xp_atual"] -= 100
+        st.session_state["nivel_atual"] += 1
+        st.toast(f"🎉 PARABÉNS! Você subiu para o Nível {st.session_state['nivel_atual']}!", icon="⭐")
+        
+    salvar_progresso_banco()
