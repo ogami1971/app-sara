@@ -1,6 +1,8 @@
 import streamlit as st
 import random
 from datetime import datetime
+import dados
+import notificacoes
 
 def exibir_inicio(capa_data, df_elogios):
     st.title(f"✨ {capa_data.get('Titulo_App', 'Nosso Universo')} ✨")
@@ -13,7 +15,7 @@ def exibir_inicio(capa_data, df_elogios):
         frases = [item['Frase'] for item in df_elogios if 'Frase' in item]
         frase_sorteada = random.choice(frases) if frases else "Você é a rosa mais preciosa do meu universo!"
         
-        # 🌟 CORREÇÃO: Salva a frase na memória estável antes do st.rerun() para ela não sumir!
+        # Salva a frase na memória estável antes do st.rerun() para ela não sumir!
         st.session_state["ultima_frase_sorteada"] = frase_sorteada
         
         # Sistema inteligente que lê palavras-chave e chaveia o ID do tema
@@ -31,7 +33,7 @@ def exibir_inicio(capa_data, df_elogios):
         # Força o Streamlit a redesenhar a tela aplicando o fundo imediatamente na mudança
         st.rerun()
 
-    # Mostra a frase salva na tela (ela vai persistir perfeitamente mesmo após o st.rerun())
+    # Mostra a frase salva na tela
     if "ultima_frase_sorteada" in st.session_state:
         st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic; color: #FFFFFF;'>\"{st.session_state['ultima_frase_sorteada']}\"</div>", unsafe_allow_html=True)
     else: 
@@ -42,13 +44,9 @@ def exibir_missoes(df_missoes):
     st.write("Aqui estão os seus desafios temporais. Cumpra-os na vida real para ganhar XP!")
     st.markdown("---")
     
-    # Inicializa variáveis de controle de XP se não existirem
-    if "xp_total" not in st.session_state:
-        st.session_state["xp_total"] = 0
-    if "missoes_concluidas_count" not in st.session_state:
-        st.session_state["missoes_concluidas_count"] = 0
-    if "feitas_hoje" not in st.session_state:
-        st.session_state["feitas_hoje"] = []
+    # 🌟 INTEGRADO COM O BANCO DE DADOS LOCAL
+    if "xp_atual" not in st.session_state:
+        dados.carregar_progresso_banco()
 
     if not df_missoes:
         st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
@@ -71,6 +69,11 @@ def exibir_missoes(df_missoes):
             
         # Usa o índice numérico da linha como o ID único do botão
         id_unico_missao = f"missao_num_{idx}"
+        
+        # Criamos o histórico em session_state baseado na sessão do dia
+        if "feitas_hoje" not in st.session_state:
+            st.session_state["feitas_hoje"] = []
+            
         ja_feita = id_unico_missao in st.session_state["feitas_hoje"]
         
         st.markdown(f"""
@@ -88,20 +91,23 @@ def exibir_missoes(df_missoes):
             except Exception:
                 pass
             
-        # Sistema de Botão Corrigido usando chaves únicas numéricas
+        # Sistema de Botão Corrigido usando chaves únicas numéricas e salvamento no JSON
         if ja_feita:
             st.success("✅ Você já concluiu essa missão e coletou o XP!")
         else:
             if st.button(f"🎯 Concluir Desafio ({xp_ganho} XP)", key=f"btn_ctrl_{id_unico_missao}"):
-                st.session_state["xp_total"] += xp_ganho
-                st.session_state["missoes_concluidas_count"] += 1
                 st.session_state["feitas_hoje"].append(id_unico_missao)
+                
+                # 🌟 Adiciona o XP e calcula o Level Up direto na mecânica persistente!
+                dados.adicionar_xp(xp_ganho)
+                
                 st.balloons()
                 st.success(f"Incrível! Você ganhou {xp_ganho} XP para a sua jornada! ⭐")
                 st.rerun()
                 
         st.markdown("<br>", unsafe_allow_html=True)
         st.markdown("---")
+
 def exibir_diario():
     st.title("📸 Nosso Diário de Memórias")
     st.markdown("---")
@@ -152,8 +158,6 @@ def exibir_enviar_carinho():
         botao_enviar = st.form_submit_button("🚀 Enviar Carinho ao Universo")
         
         if botao_enviar and texto_carinho:
-            import notificacoes
-            
             # Monta o texto que vai para o e-mail através do Zapier
             mensagem_email = f"Oi Sara! O Denner te enviou um carinho {tipo_carinho} pelo app:\n\n\"{texto_carinho}\"\n\nCom amor, seu Pequeno Príncipe. 🪐"
             
@@ -167,61 +171,67 @@ def exibir_enviar_carinho():
                 st.warning("O carinho foi enviado, mas o Zapier não respondeu. Verifique o link no arquivo notificacoes.py!")
 
 def exibir_maquina_cupons():
-    import dados
-    import notificacoes
-    
     st.title("🎰 Máquina de Cupons Românticos")
     st.write("Escolha um cupom especial e resgate-o na vida real! O Denner receberá um aviso instantâneo.")
     st.markdown("---")
     
-    # Carrega os cupons salvos
+    # Carrega os cupons e mapeia se foram usados cruzando com a memória do JSON
     cupons = dados.carregar_cupons()
     
-    # Exibe os cupons em um layout de colunas para parecer um mural de vouchers
     for cupom in cupons:
-        # Criamos uma caixinha visual (container) para cada cupom
-        with st.container(border=True):
-            col_texto, col_botao = st.columns([3, 1])
-            
-            with col_texto:
-                if cupom["usado"]:
-                    st.markdown(f"~~### {cupom['titulo']}~~")
-                    st.caption("🔴 *Este cupom já foi utilizado!*")
-                else:
-                    st.markdown(f"### {cupom['titulo']}")
-                    st.write(cupom["descricao"])
-            
-            with col_botao:
-                st.write("") # Apenas para centralizar verticalmente o botão
-                if cupom["usado"]:
-                    st.button("Utilizado", key=f"btn_{cupom['id']}", disabled=True)
-                else:
-                    # Botão para resgatar
-                    botao_resgatar = st.button("🎟️ Resgatar", key=f"btn_{cupom['id']}", type="primary")
+        with st.container():
+            if cupom["usado"]:
+                # Visual elegante de cupom desativado/queimado
+                st.markdown(
+                    f"""
+                    <div style="background-color: rgba(40, 40, 50, 0.4); border-left: 5px solid #ff4b4b; padding: 15px; border-radius: 8px; margin-bottom: 15px; opacity: 0.6;">
+                        <span style="text-decoration: line-through; font-size: 20px; font-weight: bold; color: #888;">{cupom['titulo']}</span><br>
+                        <span style="color: #ff4b4b; font-weight: bold;">🔴 Este cupom já foi utilizado!</span>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
+                st.button("Cupom Queimado ✘", key=f"btn_{cupom['id']}", disabled=True, use_container_width=True)
+            else:
+                # Visual ativo de voucher brilhante
+                st.markdown(
+                    f"""
+                    <div style="background-color: rgba(20, 30, 60, 0.7); border-left: 5px solid #4FEBDE; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
+                        <span style="font-size: 20px; font-weight: bold; color: #fff;">{cupom['titulo']}</span><br>
+                        <span style="color: #ddd; font-size: 14px;">{cupom['descricao']}</span>
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
+                
+                botao_resgatar = st.button("🎟️ Resgatar este Voucher", key=f"btn_{cupom['id']}", type="primary", use_container_width=True)
+                
+                if botao_resgatar:
+                    # 1. Registra o ID na lista interna da sessão
+                    if "cupons_usados_ids" not in st.session_state:
+                        st.session_state["cupons_usados_ids"] = []
+                    st.session_state["cupons_usados_ids"].append(cupom["id"])
                     
-                    if botao_resgatar:
-                        # 1. Marca o cupom como usado no sistema
-                        cupom["usado"] = True
-                        
-                        # 2. Prepara a mensagem para enviar para VOCÊ (Denner) via Zapier
-                        mensagem_notificacao = f"🚨 ALERTA DE RESGATE! 🚨\n\nA Sara acabou de resgatar um cupom no app do casal:\n\n🎟️ Cupom: {cupom['titulo']}\n📋 Detalhes: {cupom['descricao']}\n\nPrepare-se para cumprir a sua promessa! 😉"
-                        
-                        # 3. Dispara pro Zapier enviar pro seu e-mail
-                        notificacoes.disparar_notificacao_planilha(mensagem_notificacao)
-                        
-                        # 4. Atualiza a tela com efeito visual de sucesso
-                        st.balloons()
-                        st.success(f"Cupom '{cupom['titulo']}' resgatado com sucesso! O Denner foi notificado.")
-                        st.rerun() # Recarrega a página para atualizar o status do botão
+                    # 2. Persiste a alteração no banco JSON imediatamente
+                    dados.salvar_progresso_banco()
+                    
+                    # 3. Dispara a mensagem para o seu e-mail via Zapier
+                    mensagem_notificacao = f"🚨 ALERTA DE RESGATE! 🚨\n\nA Sara acabou de resgatar um cupom no app do casal:\n\n🎟️ Cupom: {cupom['titulo']}\n📋 Detalhes: {cupom['descricao']}\n\nPrepare-se para cumprir a sua promessa! 😉"
+                    notificacoes.disparar_notificacao_planilha(mensagem_notificacao)
+                    
+                    # 4. Feedback e recarregamento limpo
+                    st.balloons()
+                    st.success(f"Cupom '{cupom['titulo']}' resgatado com sucesso! O Denner foi notificado.")
+                    st.rerun()
+            
+            st.markdown("<br>", unsafe_allow_html=True)
+
 def exibir_central_conquistas():
-    import dados
-    import streamlit as st
-    
     st.title("🎯 Central de Conquistas da Sara")
     st.write("Acompanhe suas medalhas colecionáveis! Elas são desbloqueadas conforme você interage com o nosso universo.")
     st.markdown("---")
     
-    # Carrega as conquistas validadas em tempo real
+    # Carrega as conquistas validadas em tempo real com base nas ações salvas no JSON
     conquistas = dados.carregar_conquistas()
     
     # Exibe as medalhas em um grid organizado (3 por linha)
@@ -243,7 +253,7 @@ def exibir_central_conquistas():
                                 margin-bottom: 20px;
                                 box-shadow: 0px 4px 15px rgba(255, 215, 0, 0.3);">
                         <div style="font-size: 50px; margin-bottom: 10px;">{conquista['icone']}</div>
-                        <h4 style="color: #FFD700 !important; margin: 0;">{conquista['titulo']}</h4>
+                        <h4 style="color: #FFD700 !important; margin: 0; font-weight: bold;">{conquista['titulo']}</h4>
                         <p style="color: #fff; font-size: 13px; margin-top: 5px;">{conquista['descricao']}</p>
                         <span style="background-color: #2e7d32; color: white; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: bold;">🔓 CONQUISTADO</span>
                     </div>
