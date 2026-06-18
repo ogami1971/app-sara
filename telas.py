@@ -47,8 +47,16 @@ def exibir_missoes(df_missoes):
     # Força a sincronia limpa com o arquivo JSON antes de tudo
     dados.carregar_progresso_banco()
 
-    # Validação segura para DataFrames do Pandas vazios
-    if df_missoes is None or (hasattr(df_missoes, "empty") and df_missoes.empty) or not df_missoes:
+    # 🛠️ CORREÇÃO SEGURA: Evita o erro de ambiguidade do Pandas
+    if df_missoes is None:
+        st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
+        return
+        
+    if hasattr(df_missoes, "empty"):
+        if df_missoes.empty:
+            st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
+            return
+    elif not df_missoes:
         st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
         return
 
