@@ -47,36 +47,40 @@ def exibir_missoes(df_missoes):
     # Força a sincronia limpa com o arquivo JSON antes de tudo
     dados.carregar_progresso_banco()
 
-    # CORREÇÃO DO VALUERROR: Checagem correta para DataFrames do Pandas
+    # Validação segura para DataFrames do Pandas vazios
     if df_missoes is None or (hasattr(df_missoes, "empty") and df_missoes.empty) or not df_missoes:
         st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
         return
 
-    # Converte o DataFrame do Pandas com segurança para dicionários iteráveis do Python
+    # Converte o DataFrame do Pandas com segurança para dicionários iteráveis
     if hasattr(df_missoes, "to_dict"):
         lista_missoes = df_missoes.to_dict(orient="records")
     else:
         lista_missoes = df_missoes
 
-    # Percorre a lista gerando um índice numérico (idx) automático para cada botão
+    # Percorre a lista gerando a interface dinamicamente baseada na aba Missoes_Romanticas
     for idx, missao in enumerate(lista_missoes):
-        titulo = missao.get("Titulo", missao.get("titulo", "Missão Secreta"))
+        # Mapeia as colunas exatas da imagem: Missao, Tipo_Missao, ID_Missao e Concluida
+        titulo = missao.get("Missao", missao.get("titulo", "Missão Secreta"))
         tipo = missao.get("Tipo_Missao", missao.get("tipo", "Fácil (Cotidiana)"))
-        gif = missao.get("Gif", missao.get("gif", ""))
+        id_missao_planilha = missao.get("ID_Missao", idx)
         
-        if "Diária" in str(tipo) or "DIÁRIA" in str(titulo) or "Fácil" in str(tipo):
+        # Define o XP com base na coluna Tipo_Missao detectada
+        if "Diaria" in str(tipo) or "Diária" in str(tipo) or "Fácil" in str(tipo):
             xp_ganho = 50
-        elif "Semanal" in str(tipo) or "SEMANAL" in str(titulo) or "Média" in str(tipo):
+        elif "Semanal" in str(tipo) or "Média" in str(tipo):
             xp_ganho = 150
         else:
             xp_ganho = 500
             
-        id_unico_missao = f"missao_num_{idx}"
+        id_unico_missao = f"missao_num_{id_missao_planilha}"
         
         if "feitas_hoje" not in st.session_state:
             st.session_state["feitas_hoje"] = []
             
-        ja_feita = id_unico_missao in st.session_state["feitas_hoje"]
+        # Considera feita se estiver marcada na sessão ou se a planilha indicar TRUE
+        status_planilha = str(missao.get("Concluida", "FALSE")).upper() == "TRUE"
+        ja_feita = id_unico_missao in st.session_state["feitas_hoje"] or status_planilha
         
         st.markdown(f"""
             <div class='card' style='border-left: 5px solid #FFD700; margin-bottom: 20px;'>
@@ -86,12 +90,6 @@ def exibir_missoes(df_missoes):
             </div>
         """, unsafe_allow_html=True)
         
-        if gif:
-            try:
-                st.image(gif, width=250)
-            except Exception:
-                pass
-            
         if ja_feita:
             st.success("✅ Você já concluiu essa missão e coletou o XP!")
         else:
