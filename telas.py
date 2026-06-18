@@ -3,10 +3,7 @@ import random
 from datetime import datetime
 
 def exibir_inicio(capa_data, df_elogios):
-    try: 
-        st.image("capa.jpg", use_container_width=True)
-    except Exception: 
-        st.warning("🌌 Carregando imagem de capa do nosso asteroide...")
+    # REMOVIDO: O st.image("capa.jpg") que ficava centralizado e atrapalhando o fundo!
         
     st.title(f"✨ {capa_data.get('Titulo_App', 'Nosso Universo')} ✨")
     st.markdown(f"<h3>{capa_data.get('Subtitulo_App', 'Bem-vinda')}</h3>", unsafe_allow_html=True)
@@ -43,10 +40,10 @@ def exibir_missoes(df_missoes):
             st.write(f"**Nível:** Essa missão é considerada *{row.get('Tipo_Missao')}*. Vamos cumprir juntos?")
             nome_gif = str(row.get('Gif', '')).strip()
             try: 
-                st.image(nome_gif, caption="Nosso Momento!", use_container_width=True)
+                st.image(nome_gif, caption="Nosso Moment!")
             except Exception:
                 try: 
-                    st.image(nome_gif.lower(), caption="Nosso Momento!", use_container_width=True)
+                    st.image(nome_gif.lower(), caption="Nosso Moment!")
                 except Exception: 
                     st.error(f"🎬 O arquivo animado '{nome_gif}' não foi localizado na raiz.")
         st.markdown("<br>", unsafe_allow_html=True)
@@ -58,14 +55,14 @@ def exibir_diario():
     st.subheader("🌹 O Princípio de Tudo")
     st.markdown("> *“Tu te tornas eternamente responsável por aquilo que cativas.”*")
     try: 
-        st.image("tela de carregamento.jpg", caption="Onde o nosso universo começou...", use_container_width=True)
+        st.image("Tela de carregamento.jpg", caption="Onde o nosso universo começou...")
     except Exception: 
         st.info("📸 Preparando nosso mural de fotos...")
         
     st.markdown("---")
     st.subheader("✨ Nossa Sintonia")
     try: 
-        st.image("rosa.gif", caption="Você é única no mundo para mim.", use_container_width=True)
+        st.image("rosa.gif", caption="Você é única no mundo para mim.")
     except Exception: 
         st.warning("🌹 Cuidando da nossa rosa animada...")
 
@@ -117,7 +114,7 @@ def exibir_enviar_carinho():
                 "hora": agora,
                 "reacao_texto": reacao_escolhida if reacao_escolhida != "Selecione uma reação..." else None,
                 "gif": opcoes_reacoes[reacao_escolhida] if reacao_escolhida != "Selecione uma reação..." else None,
-                "mensagem": mensagem_personalizada.strip() if mensagem_personalizada.strip() != "" else None
+                "mensagem": message_personalizada.strip() if mensagem_personalizada.strip() != "" else None
             }
             st.session_state["historico_carinhos"].insert(0, novo_carinho)
             st.toast("Carinho enviado com sucesso! ✨", icon="❤️")
@@ -134,6 +131,6 @@ def exibir_enviar_carinho():
             
         if ultimo_envio["gif"]:
             try:
-                st.image(ultimo_envio["gif"], caption=f"Humor atual: {ultimo_envio['reacao_texto']}", use_container_width=True)
+                st.image(ultimo_envio["gif"], caption=f"Humor atual: {ultimo_envio['reacao_texto']}")
             except Exception:
                 st.error(f"🎬 O arquivo animado '{ultimo_envio['gif']}' não pôde ser renderizado.")
