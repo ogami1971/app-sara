@@ -60,10 +60,31 @@ def injetar_wallpaper_dinamico():
                 display: none !important;
             }}
             
-            /* 🎯 O tiro certeiro para sumir com o texto "keyboard_double..." */
+            /* 🌹 TRANSFORMA O TEXTO BUGADO DO BOTÃO DA SIDEBAR EM UMA ROSA */
             [data-testid="collapsedControl"] {{
-                color: transparent !important;
                 font-size: 0px !important;
+                color: transparent !important;
+                width: 40px !important;
+                height: 40px !important;
+            }}
+            
+            [data-testid="collapsedControl"] button,
+            [data-testid="collapsedControl"] button * {{
+                font-size: 0px !important;
+                color: transparent !important;
+                background: transparent !important;
+                border: none !important;
+            }}
+            
+            /* Injeta o emoji da rosa no lugar exato do botão */
+            [data-testid="collapsedControl"]::after {{
+                content: "🌹" !important;
+                font-size: 26px !important;
+                display: block !important;
+                position: absolute !important;
+                top: 10px !important;
+                left: 15px !important;
+                cursor: pointer !important;
             }}
             </style>
             """,
