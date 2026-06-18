@@ -38,35 +38,62 @@ def exibir_inicio(capa_data, df_elogios):
         st.info("Clique no botão acima para receber sua dose diária de amor!")
 
 def exibir_missoes(df_missoes):
-    st.title("🎯 Nossas Missões Românticas")
-    st.write("Aqui estão os nossos desafios! Clique no botão de cada uma para ver uma surpresa animada:")
+    st.title("🎯 Mural de Missões Ativas")
+    st.write("Aqui estão os seus desafios temporais. Cumpra-os na vida real para ganhar XP!")
     st.markdown("---")
     
-    for row in df_missoes:
-        status_real = row.get('Status', 'Pendente').strip()
-        status_icon = "✅" if status_real == "Concluída" else "⏳"
-        classe_texto = "missao-concluida" if status_real == "Concluída" else ""
+    # Inicializa variáveis de controle se não existirem
+    if "xp_total" not in st.session_state:
+        st.session_state["xp_total"] = 0
+    if "missoes_concluidas_count" not in st.session_state:
+        st.session_state["missoes_concluidas_count"] = 0
+    if "feitas_hoje" not in st.session_state:
+        st.session_state["feitas_hoje"] = []
+
+    # O df_missoes aqui carrega aquela lista automatizada que fizemos com as 3 missões do dia/semana/mês
+    for missao in df_missoes:
+        m_id = missao["ID"]
+        titulo = missao["Titulo"]
+        tipo = missao["Tipo_Missao"]
+        gif = missao["Gif"]
+        
+        # Define XP por tipo de missão
+        if "Diária" in tipo or "Fácil" in tipo:
+            xp_ganho = 50
+        elif "Semanal" in tipo or "Média" in tipo:
+            xp_ganho = 150
+        else:
+            xp_ganho = 500
+            
+        ja_feita = m_id in st.session_state["feitas_hoje"]
         
         st.markdown(f"""
-            <div class='card'>
-                <span style='float: right; background: #FF4B4B; padding: 2px 8px; border-radius: 10px; font-size: 12px; font-weight: bold;'>{row.get('Tipo_Missao', 'Normal')}</span>
-                <h4 class='{classe_texto}'>{status_icon} {row.get('Titulo', 'Missão')}</h4>
-                <p style='font-size: 13px; color: #aaa; margin-bottom: 0px;'>Status do Desafio: {status_real}</p>
+            <div class='card' style='border-left: 5px solid #FFD700; margin-bottom: 20px;'>
+                <span style='float: right; background: #1C2541; padding: 3px 8px; border-radius: 10px; font-size: 12px; color: #FFD700;'>✨ +{xp_ganho} XP</span>
+                <h3>{titulo}</h3>
+                <p><b>Dificuldade:</b> {tipo}</p>
             </div>
         """, unsafe_allow_html=True)
         
-        if st.button(f"🔍 Ver Surpresa: {row.get('Titulo')}", key=f"btn_{row.get('ID')}"):
-            st.write(f"**Nível:** Essa missão é considerada *{row.get('Tipo_Missao')}*. Vamos cumprir juntos?")
-            nome_gif = str(row.get('Gif', '')).strip()
-            try: 
-                st.image(nome_gif, caption="Nosso Moment!")
-            except Exception:
-                try: 
-                    st.image(nome_gif.lower(), caption="Nosso Moment!")
-                except Exception: 
-                    st.error(f"🎬 O arquivo animado '{nome_gif}' não foi localizado na raiz.")
-        st.markdown("<br>", unsafe_allow_html=True)
-
+        # Exibe o Gif correspondente se ele abrir
+        try:
+            st.image(gif, width=250)
+        except Exception:
+            pass
+            
+        # Botão interativo de conclusão
+        if ja_feita:
+            st.success("✅ Você já concluiu essa missão e coletou o XP!")
+        else:
+            if st.button(f"🎯 Concluir Desafio ({xp_ganho} XP)", key=f"btn_{m_id}"):
+                st.session_state["xp_total"] += xp_ganho
+                st.session_state["missoes_concluidas_count"] += 1
+                st.session_state["feitas_hoje"].append(m_id)
+                st.balloons()
+                st.success(f"Incrível! Você ganhou {xp_ganho} XP para a sua jornada! ⭐")
+                st.rerun()
+                
+        st.markdown("---")
 def exibir_diario():
     st.title("📸 Nosso Diário de Memórias")
     st.markdown("---")
