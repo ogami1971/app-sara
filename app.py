@@ -120,7 +120,7 @@ tela_selecionada = st.sidebar.radio(
         "🌌 Início & Carinho", 
         "🎯 Missões Secretas", 
         "⚔️ Nossa Jornada RPG",
-        "🎰 Máquina de Cupons",  # 🎟️ Adicionado perfeitamente aqui!
+        "🎰 Máquina de Cupons",
         "🎲 Roleta de Rolês",    
         "⏳ Tempo Juntos",       
         "💬 Enviar Carinho"
@@ -128,8 +128,8 @@ tela_selecionada = st.sidebar.radio(
 )
 st.sidebar.markdown("### 🎵 Trilha Sonora")
 
-# 🌟 Link do YouTube configurado
-id_video_youtube = "pmanD_s7G3U" 
+# 🌟 Atualizado com o novo vídeo de Your Name!
+id_video_youtube = "7j60jaMapJ0" 
 
 # Cria o player do YouTube em miniatura dentro do menu lateral
 st.sidebar.markdown(
