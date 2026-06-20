@@ -1,30 +1,35 @@
 import streamlit as st
 import requests
 
-def disparar_notificacao_planilha(mensagem):
+def disparar_notificacao_planilha(mensagem, quem_enviou="Sara"):
     """
-    Envia a mensagem de texto direto para o seu WhatsApp usando a API do CallMeBot.
-    Substitui o Zapier completamente.
+    Envia mensagens para o WhatsApp do Denner. O texto muda indicando quem realizou
+    a ação dentro do aplicativo, centralizando os alertas até a API da Sara estar pronta.
     """
-    # Seus dados configurados da API do CallMeBot
-    PHONE = "556198482916"
-    API_KEY = "1302963"
     
-    # Monta a URL exatamente no formato que o CallMeBot exige
+    # 🚨 USANDO SEU NÚMERO E SUA CHAVE PARA AMBOS OS CASOS:
+    WHATSAPP_DENNER = "556198482916"
+    API_KEY_DENNER = "1302963"
+
     url_callmebot = "https://api.callmebot.com/whatsapp.php"
     
-    # Parâmetros que vão anexados na URL (?phone=...&text=...&apikey=...)
+    # 🎭 PERSONALIZAÇÃO DO TEXTO DO ALERTA
+    if quem_enviou.lower() == "sara":
+        # Mensagem avisando você sobre o que ela fez
+        mensagem_formatada = f"🪐 *Alerta do Pequeno Príncipe!* \n\nDenner, a sua rosa (Sara) acabou de interagir no app! \n\n📋 *Ação dela:* {mensagem}"
+    else:
+        # Confirmação enviada para você informando que seu carinho foi processado
+        mensagem_formatada = f"🌹 *Confirmação de Envio (Para Denner):* \n\nSeu carinho foi processado com sucesso! Você enviou para a Sara:\n\n✨ {mensagem}"
+
+    # Parâmetros apontando sempre para o seu celular
     payload = {
-        "phone": PHONE,
-        "text": str(mensagem),
-        "apikey": API_KEY
+        "phone": WHATSAPP_DENNER,
+        "text": mensagem_formatada,
+        "apikey": API_KEY_DENNER
     }
     
     try:
-        # O CallMeBot recebe dados via requisição GET
         resposta = requests.get(url_callmebot, params=payload, timeout=10)
-        
-        # Se retornar status 200, significa que o bot aceitou o envio
         if resposta.status_code == 200:
             return True
         return False
