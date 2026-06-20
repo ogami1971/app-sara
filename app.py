@@ -2,7 +2,7 @@ import streamlit as st
 # Configuração da página (DEVE ser o primeiro comando Streamlit do script)
 st.set_page_config(page_title="Universo de Amor", page_icon="🌹", layout="wide")
 
-import dados
+import notificacoes as notificacoes
 import telas
 
 # 1. CARREGAMENTO DOS DADOS (Recebendo as 4 abas do Sheets)
