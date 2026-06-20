@@ -15,10 +15,8 @@ def exibir_inicio(capa_data, df_elogios):
         frases = [item['Frase'] for item in df_elogios if 'Frase' in item]
         frase_sorteada = random.choice(frases) if frases else "Você é a rosa mais preciosa do meu universo!"
         
-        # Salva a frase na memória estável antes do st.rerun() para ela não sumir!
         st.session_state["ultima_frase_sorteada"] = frase_sorteada
         
-        # Sistema inteligente que lê palavras-chave e chaveia o ID do tema
         frase_minuscula = frase_sorteada.lower()
         if "rosa" in frase_minuscula or "planeta" in frase_minuscula or "essencial" in frase_minuscula or "quatro da tarde" in frase_minuscula or "universo" in frase_minuscula:
             st.session_state["tema_fundo"] = "pequeno_principe"
@@ -30,10 +28,8 @@ def exibir_inicio(capa_data, df_elogios):
             st.session_state["tema_fundo"] = "arcane"
         
         st.balloons() 
-        # Força o Streamlit a redesenhar a tela aplicando o fundo imediatamente na mudança
         st.rerun()
 
-    # Mostra a frase salva na tela
     if "ultima_frase_sorteada" in st.session_state:
         st.markdown(f"<div class='card' style='text-align: center; font-size: 20px; font-style: italic; color: #FFFFFF;'>\"{st.session_state['ultima_frase_sorteada']}\"</div>", unsafe_allow_html=True)
     else: 
@@ -44,10 +40,8 @@ def exibir_missoes(df_missoes):
     st.write("Aqui estão os seus desafios temporais. Cumpra-os na vida real para ganhar XP!")
     st.markdown("---")
     
-    # Força a sincronia limpa com o arquivo JSON antes de tudo
     dados.carregar_progresso_banco()
 
-    # 🛠️ CORREÇÃO SEGURA: Evita o erro de ambiguidade do Pandas
     if df_missoes is None:
         st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
         return
@@ -60,20 +54,16 @@ def exibir_missoes(df_missoes):
         st.info("🎯 Nenhuma missão ativa encontrada na planilha neste momento.")
         return
 
-    # Converte o DataFrame do Pandas com segurança para dicionários iteráveis
     if hasattr(df_missoes, "to_dict"):
         lista_missoes = df_missoes.to_dict(orient="records")
     else:
         lista_missoes = df_missoes
 
-    # Percorre a lista gerando a interface dinamicamente baseada na aba Missoes_Romanticas
     for idx, missao in enumerate(lista_missoes):
-        # Mapeia as colunas exatas da imagem: Missao, Tipo_Missao, ID_Missao e Concluida
         titulo = missao.get("Missao", missao.get("titulo", "Missão Secreta"))
         tipo = missao.get("Tipo_Missao", missao.get("tipo", "Fácil (Cotidiana)"))
         id_missao_planilha = missao.get("ID_Missao", idx)
         
-        # Define o XP com base na coluna Tipo_Missao detectada
         if "Diaria" in str(tipo) or "Diária" in str(tipo) or "Fácil" in str(tipo):
             xp_ganho = 50
         elif "Semanal" in str(tipo) or "Média" in str(tipo):
@@ -86,7 +76,6 @@ def exibir_missoes(df_missoes):
         if "feitas_hoje" not in st.session_state:
             st.session_state["feitas_hoje"] = []
             
-        # Considera feita se estiver marcada na sessão ou se a planilha indicar TRUE
         status_planilha = str(missao.get("Concluida", "FALSE")).upper() == "TRUE"
         ja_feita = id_unico_missao in st.session_state["feitas_hoje"] or status_planilha
         
@@ -102,11 +91,12 @@ def exibir_missoes(df_missoes):
             st.success("✅ Você já concluiu essa missão e coletou o XP!")
         else:
             if st.button(f"🎯 Concluir Desafio ({xp_ganho} XP)", key=f"btn_ctrl_{id_unico_missao}"):
-                # Registra na lista da sessão atual do navegador
                 st.session_state["feitas_hoje"].append(id_unico_missao)
-                
-                # Adiciona o XP e salva no arquivo permanentemente (Chama o JSON)
                 dados.adicionar_xp(xp_ganho)
+                
+                # Envia um alerta automático para o seu WhatsApp quando a Sara cumpre uma missão!
+                detalhe_missao = f"Completou a missão: *{titulo}* (+{xp_ganho} XP) ⭐"
+                notificacoes.disparar_notificacao_planilha(detalhe_missao, quem_enviou="Sara")
                 
                 st.balloons()
                 st.success(f"Incrível! Você ganhou {xp_ganho} XP para a sua jornada! ⭐")
@@ -155,7 +145,8 @@ def exibir_linha_tempo():
 
 def exibir_enviar_carinho():
     st.title("💬 Enviar um Carinho Especial")
-    st.write("Escreva algo lindo para a Sara. A mensagem vai para o mural do app e direto para o e-mail dela!")
+    # 📝 Texto corrigido aqui para WhatsApp!
+    st.write("Escreva algo lindo para a Sara. A mensagem vai direto para o WhatsApp dela!")
     st.markdown("---")
     
     with st.form("form_carinho", clear_on_submit=True):
@@ -165,30 +156,28 @@ def exibir_enviar_carinho():
         botao_enviar = st.form_submit_button("🚀 Enviar Carinho ao Universo")
         
         if botao_enviar and texto_carinho:
-            # Monta o texto que vai para o e-mail através do Zapier
-            mensagem_email = f"Oi Sara! O Denner te enviou um carinho {tipo_carinho} pelo app:\n\n\"{texto_carinho}\"\n\nCom amor, seu Pequeno Príncipe. 🪐"
+            carinho_formatado = f"Carinho {tipo_carinho}:\n\"{texto_carinho}\""
             
-            # Dispara para o Webhook do Zapier
-            sucesso = notificacoes.disparar_notificacao_planilha(mensagem_email)
+            # Envia identificando "Denner" para cair no seu formato de mensagem
+            sucesso = notificacoes.disparar_notificacao_planilha(carinho_formatado, quem_enviou="Denner")
             
             if sucesso:
                 st.balloons()
-                st.success("✨ Carinho enviado para o mural e a caminho do e-mail dela!")
+                # 📝 Mensagem verde corrigida aqui!
+                st.success("✨ Carinho enviado com sucesso e a caminho do WhatsApp!")
             else:
-                st.warning("O carinho foi enviado, mas o Zapier não respondeu. Verifique o link no arquivo notificacoes.py!")
+                st.error("Erro ao enviar pelo CallMeBot. Verifique as configurações no seu arquivo 'notificacoes.py'.")
 
 def exibir_maquina_cupons():
     st.title("🎰 Máquina de Cupons Românticos")
-    st.write("Escolha um cupom especial e resgate-o na vida real! O Denner receberá um aviso instantâneo.")
+    st.write("Escolha um cupom especial e resgate-o na vida real! O Denner receberá um aviso instantâneo no WhatsApp.")
     st.markdown("---")
     
-    # Carrega os cupons e mapeia se foram usados cruzando com a memória do JSON
     cupons = dados.carregar_cupons()
     
     for cupom in cupons:
         with st.container():
             if cupom["usado"]:
-                # Visual elegante de cupom desativado/queimado
                 st.markdown(
                     f"""
                     <div style="background-color: rgba(40, 40, 50, 0.4); border-left: 5px solid #ff4b4b; padding: 15px; border-radius: 8px; margin-bottom: 15px; opacity: 0.6;">
@@ -200,7 +189,6 @@ def exibir_maquina_cupons():
                 )
                 st.button("Cupom Queimado ✘", key=f"btn_{cupom['id']}", disabled=True, use_container_width=True)
             else:
-                # Visual ativo de voucher brilhante
                 st.markdown(
                     f"""
                     <div style="background-color: rgba(20, 30, 60, 0.7); border-left: 5px solid #4FEBDE; padding: 15px; border-radius: 8px; margin-bottom: 10px; box-shadow: 0px 4px 10px rgba(0,0,0,0.3);">
@@ -214,21 +202,18 @@ def exibir_maquina_cupons():
                 botao_resgatar = st.button("🎟️ Resgatar este Voucher", key=f"btn_{cupom['id']}", type="primary", use_container_width=True)
                 
                 if botao_resgatar:
-                    # 1. Registra o ID na lista interna da sessão
                     if "cupons_usados_ids" not in st.session_state:
                         st.session_state["cupons_usados_ids"] = []
                     st.session_state["cupons_usados_ids"].append(cupom["id"])
                     
-                    # 2. Persiste a alteração no banco JSON imediatamente
                     dados.salvar_progresso_banco()
                     
-                    # 3. Dispara a mensagem para o seu e-mail via Zapier
-                    mensagem_notificacao = f"🚨 ALERTA DE RESGATE! 🚨\n\nA Sara acabou de resgatar um cupom no app do casal:\n\n🎟️ Cupom: {cupom['titulo']}\n📋 Detalhes: {cupom['descricao']}\n\nPrepare-se para cumprir a sua promessa! 😉"
-                    notificacoes.disparar_notificacao_planilha(mensagem_notificacao)
+                    # Envia identificando "Sara" para o seu WhatsApp apitar
+                    detalhe_cupom = f"Resgatou o voucher *{cupom['titulo']}* ({cupom['descricao']}). Prepare-se para cumprir a promessa! 😉"
+                    notificacoes.disparar_notificacao_planilha(detalhe_cupom, quem_enviou="Sara")
                     
-                    # 4. Feedback e recarregamento limpo
                     st.balloons()
-                    st.success(f"Cupom '{cupom['titulo']}' resgatado com sucesso! O Denner foi notificado.")
+                    st.success(f"Cupom '{cupom['titulo']}' resgatado! O Denner foi notificado no WhatsApp.")
                     st.rerun()
             
             st.markdown("<br>", unsafe_allow_html=True)
@@ -238,18 +223,14 @@ def exibir_central_conquistas():
     st.write("Acompanhe suas medalhas colecionáveis! Elas são desbloqueadas conforme você interage com o nosso universo.")
     st.markdown("---")
     
-    # Carrega as conquistas validadas em tempo real com base nas ações salvas no JSON
     conquistas = dados.carregar_conquistas()
-    
-    # Exibe as medalhas em um grid organizado (3 por linha)
     cols = st.columns(3)
     
     for i, conquista in enumerate(conquistas):
-        col_atual = cols[i % 3] # Distribui entre as 3 colunas dinamicamente
+        col_atual = cols[i % 3]
         
         with col_atual:
             if conquista["desbloqueada"]:
-                # Medalha Desbloqueada: Colorida, brilhante e dourada
                 st.markdown(
                     f"""
                     <div style="background-color: rgba(255, 215, 0, 0.15); 
@@ -268,7 +249,6 @@ def exibir_central_conquistas():
                     unsafe_allow_html=True
                 )
             else:
-                # Medalha Bloqueada: Cinza, opaca e discreta
                 st.markdown(
                     f"""
                     <div style="background-color: rgba(40, 40, 50, 0.3); 
