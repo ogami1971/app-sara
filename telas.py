@@ -2,7 +2,7 @@ import streamlit as st
 import random
 from datetime import datetime
 import dados
-import notifications as notificacoes # ou 'import notificacoes' dependendo do nome do seu arquivo
+import notificacoes as notificacoes
 
 def exibir_inicio(capa_data, df_elogios):
     st.title(f"✨ {capa_data.get('Titulo_App', 'Nosso Universo')} ✨")
