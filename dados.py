@@ -6,14 +6,14 @@ import os
 def carregar_dados():
     """
     Conecta diretamente com a sua planilha do Google Sheets e puxa os dados reais
-    das abas 'Capa_app', 'Banco_De_Elogios' e 'Missoes_Romanticas'.
+    das abas 'Capa_app', 'Banco_De_Elogios', 'Missoes_Romanticas' e 'Cupons_Romanticos'.
     """
-    # ID corrigido com o link exato que você mandou
     ID_PLANILHA = "11_R_3hNyr18YPPdHzM58iEKxG7_uorm0TBaHIeg36F8"
     
     url_capa = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Capa_app"
     url_elogios = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Banco_De_Elogios"
     url_missoes = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Missoes_Romanticas"
+    url_cupons = f"https://docs.google.com/spreadsheets/d/{ID_PLANILHA}/gviz/tq?tqx=out:csv&sheet=Cupons_Romanticos"
     
     try:
         df_capa = pd.read_csv(url_capa)
@@ -31,14 +31,18 @@ def carregar_dados():
         df_elogios = []
 
     try:
-        # 🎯 Carrega as missões diretamente da aba 'Missoes_Romanticas'
         df_missoes = pd.read_csv(url_missoes)
-    except Exception as e:
-        # Caso ocorra falha na conexão, cria um DataFrame estruturado vazio e avisa na tela
-        st.error("Aviso: Não foi possível ler a planilha. Verifique se o link está público (Qualquer pessoa com o link pode ler).")
+    except Exception:
         df_missoes = pd.DataFrame(columns=["ID_Missao", "Missao", "Concluida", "Tipo_Missao"])
+        
+    try:
+        # 📊 Puxa a nova aba de cupons direto da planilha
+        df_cupons = pd.read_csv(url_cupons)
+    except Exception:
+        # Caso a aba ainda não exista ou dê erro, cria um DataFrame reserva vazio
+        df_cupons = pd.DataFrame(columns=["ID_Cupom", "Titulo", "Descricao"])
     
-    return capa_data, df_elogios, df_missoes
+    return capa_data, df_elogios, df_missoes, df_cupons
 
 # ------------------------------------------------------------------
 # 🎰 SISTEMA DE BANCO DE DADOS PERSISTENTE (JSON)
@@ -89,25 +93,36 @@ def salvar_progresso_banco():
         pass
 
 # ------------------------------------------------------------------
-# 🎟️ GERENCIADORES DE CONTEÚDO (CUPONS E CONQUISTAS)
+# 🎟️ GERENCIADORES DE CONTEÚDO (INTEGRAÇÃO DINÂMICA)
 # ------------------------------------------------------------------
 
-def carregar_cupons():
+def processar_cupons_dinamicos(df_cupons):
+    """
+    Recebe os cupons vindos do Sheets e cruza com os IDs salvos localmente
+    no progresso_sara.json para saber o que já foi usado.
+    """
     if "cupons_usados_ids" not in st.session_state:
         carregar_progresso_banco()
         
-    cupons_base = [
-        {"id": 1, "titulo": "Vale 1 Massagem de 30 min 💆‍♀️", "descricao": "Direito a óleo perfumado e música calma."},
-        {"id": 2, "titulo": "Vale 1 Jantar Especial 🍝", "descricao": "Pago e escolhido inteiramente pelo Denner."},
-        {"id": 3, "titulo": "Vale Cinema em Casa 🍿", "descricao": "Você escolhe o filme e eu faço a pipoca (sem reclamar!)."},
-        {"id": 4, "titulo": "Vale Rodada de Cafuné Unlimited 🧸", "descricao": "Válido até você ou eu dormirmos."},
-        {"id": 5, "titulo": "Vale Sair para comer Doce 🍰", "descricao": "Uma caçada aos melhores doces da Asa Norte."},
-    ]
-    
-    for cupom in cupons_base:
-        cupom["usado"] = cupom["id"] in st.session_state.get("cupons_usados_ids", [])
+    if df_cupons is None or (hasattr(df_cupons, "empty") and df_cupons.empty):
+        return []
         
-    return cupons_base
+    # Converte o DataFrame para lista de dicionários
+    lista_bruta = df_cupons.to_dict(orient="records") if hasattr(df_cupons, "to_dict") else df_cupons
+    cupons_formatados = []
+    
+    for idx, c in enumerate(lista_bruta):
+        id_original = c.get("ID_Cupom", idx + 1)
+        
+        cupom_dict = {
+            "id": int(id_original),
+            "titulo": c.get("Titulo", "Cupom Sem Nome 🎟️"),
+            "descricao": c.get("Descricao", "Nenhuma descrição informada."),
+            "usado": int(id_original) in st.session_state.get("cupons_usados_ids", [])
+        }
+        cupons_formatados.append(cupom_dict)
+        
+    return cupons_formatados
 
 def carregar_conquistas():
     cupons_usados = st.session_state.get("cupons_usados_ids", [])
